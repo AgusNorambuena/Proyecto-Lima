@@ -1,4 +1,4 @@
-package com.example.Lima;
+package com.escuela.Lima;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
