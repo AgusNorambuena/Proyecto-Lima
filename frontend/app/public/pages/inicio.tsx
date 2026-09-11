@@ -18,7 +18,10 @@ export default function Inicio() {
         <View style={styles.Wrapper}>
             <StatusBar style="light" />
             <SafeAreaView style={styles.Body}>
-                
+                <ScrollView>
+                    <View style={styles.Modos}>
+                        <Text>prueba</Text>
+                    </View>
                 <View style={styles.LogoContainer}>
                     <Image
                         source={require('../../../assets/images/LogoLima.png')}
@@ -81,7 +84,42 @@ export default function Inicio() {
                             <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
                         </ScrollView>
                     </View>
+                    <Pressable style={styles.Gestor}>
+                        <Text style={styles.gestorTexto}>Contraseñas</Text>
+                    </Pressable>
+
+                    <View style={styles.Contenido}>
+                        <ScrollView
+                            horizontal={true}
+                            style={styles.scrollView}
+                            showsHorizontalScrollIndicator={true}
+                            contentContainerStyle={styles.contenedorScroll}
+                        >
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                        </ScrollView>
+                    </View>
+                    <Pressable style={styles.Gestor}>
+                        <Text style={styles.gestorTexto}>Contraseñas</Text>
+                    </Pressable>
+
+                    <View style={styles.Contenido}>
+                        <ScrollView
+                            horizontal={true}
+                            style={styles.scrollView}
+                            showsHorizontalScrollIndicator={true}
+                            contentContainerStyle={styles.contenedorScroll}
+                        >
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                        </ScrollView>
+                    </View>
                 </View>
+                </ScrollView>
             </SafeAreaView>
         </View>
     );
@@ -95,6 +133,18 @@ const Styles = (width: number) => StyleSheet.create({
         flex: 1,
         backgroundColor: "#e7e7e7",
     },
+    Modos:{
+        backgroundColor: "#0e249e",
+        left: 0,
+        borderRadius: "100%",
+        height: 50,
+        width: 50,
+        position: "absolute",
+        alignItems: "center",
+        textAlign: "center",
+        justifyContent: "center",
+        color: "#fff",
+    },
     LogoContainer: {
         alignItems: "center",
         justifyContent: "center",
@@ -102,7 +152,7 @@ const Styles = (width: number) => StyleSheet.create({
         marginBottom: 10,
     },
     Logo: {
-        width: 200,
+        width: width,
         height: 160,
     },
     Seccion: {
@@ -117,11 +167,11 @@ const Styles = (width: number) => StyleSheet.create({
         marginBottom: 10,
         alignItems: "center",
         justifyContent: "center",
-        // shadowColor: "#000",
-        // shadowOffset: { width: 0, height: 2 },
-        // shadowOpacity: 0.3,
-        // shadowRadius: 4,
-        // elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
     gestorTexto: {
         fontSize: 15,
@@ -135,7 +185,7 @@ const Styles = (width: number) => StyleSheet.create({
         height: width * 0.3,
         width: width * 0.8,
         alignSelf: "center",
-        justifyContent: "center",
+        alignItems: "flex-start",
     },
     scrollView: {
         width: '100%',
