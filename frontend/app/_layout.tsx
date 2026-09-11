@@ -1,16 +1,16 @@
-import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React from "react";
+import { Slot } from "expo-router";
+import { ScrollView, StyleSheet } from "react-native";
 
-export default function RootLayout() {
-  return (
-    <SafeAreaProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: false,
-          contentStyle: { flex: 1 },
-        }}
-      />
-    </SafeAreaProvider>
-  );
-}
+export default () => (
+    <>
+        <ScrollView style={styles.scroll} id="ui-scrollview" contentContainerStyle={styles.scrollContainer}>
+            <Slot />
+        </ScrollView>
+    </>
+);
+
+const styles = StyleSheet.create({
+    scroll: { flex: 1, height: "100%" },
+    scrollContainer: { flexGrow: 1 },
+});

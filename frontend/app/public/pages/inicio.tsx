@@ -2,14 +2,23 @@ import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+const DATA = [
+  { id: '1', title: 'Elemento 1' },
+  { id: '2', title: 'Elemento 2' },
+  { id: '3', title: 'Elemento 3' },
+  { id: '4', title: 'Elemento 4' },
+];
+
 export default function Inicio() {
     const { width } = useWindowDimensions();
     const styles = Styles(width);
+    
 
     return (
         <View style={styles.Wrapper}>
             <StatusBar style="light" />
             <SafeAreaView style={styles.Body}>
+                
                 <View style={styles.LogoContainer}>
                     <Image
                         source={require('../../../assets/images/LogoLima.png')}
@@ -25,7 +34,7 @@ export default function Inicio() {
 
                     <View style={styles.Contenido}>
                         <ScrollView
-                            horizontal
+                            horizontal={true}
                             style={styles.scrollView}
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.contenedorScroll}
@@ -61,9 +70,9 @@ export default function Inicio() {
 
                     <View style={styles.Contenido}>
                         <ScrollView
-                            horizontal
+                            horizontal={true}
                             style={styles.scrollView}
-                            showsHorizontalScrollIndicator={false}
+                            showsHorizontalScrollIndicator={true}
                             contentContainerStyle={styles.contenedorScroll}
                         >
                             <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
@@ -81,11 +90,10 @@ export default function Inicio() {
 const Styles = (width: number) => StyleSheet.create({
     Wrapper: {
         flex: 1,
-        backgroundColor: "#8f1212",
     },
     Body: {
         flex: 1,
-        backgroundColor: "#8f1212",
+        backgroundColor: "#e7e7e7",
     },
     LogoContainer: {
         alignItems: "center",
@@ -116,8 +124,7 @@ const Styles = (width: number) => StyleSheet.create({
         // elevation: 4,
     },
     gestorTexto: {
-        color: "red",
-        fontSize: 40,
+        fontSize: 15,
         fontWeight: "bold",
     },
     Contenido: {
@@ -138,8 +145,8 @@ const Styles = (width: number) => StyleSheet.create({
         alignItems: 'center',
     },
     card: {
-        width: 150,
-        height: 100,
+        width: width * 0.4,
+        height: width * 0.2,
         backgroundColor: '#4f46e5',
         marginRight: 12,
         justifyContent: 'center',
