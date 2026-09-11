@@ -1,27 +1,71 @@
 import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
-export default function Inicio(){
-    const { width, height } = useWindowDimensions();
-    const styles = Styles(width, height);
-    return(
-            <View style={styles.Body}>
-                <View>
-                    <Image source={require('../../../assets/images/LogoLima.png')}
-                    style={styles.Logo}
-                    />  
+export default function Inicio() {
+    const { width } = useWindowDimensions();
+    const styles = Styles(width);
+
+    return (
+        <View style={styles.Wrapper}>
+            <StatusBar style="light" />
+            <SafeAreaView style={styles.Body}>
+                <View style={styles.LogoContainer}>
+                    <Image
+                        source={require('../../../assets/images/LogoLima.png')}
+                        style={styles.Logo}
+                        resizeMode="contain"
+                    />
                 </View>
-                <View>
-                    <Pressable style={styles.Gestor}> 
-                        <Text>
-                            Contraseñas
-                        </Text>
+
+                <View style={styles.Seccion}>
+                    <Pressable style={styles.Gestor}>
+                        <Text style={styles.gestorTexto}>Contraseñas</Text>
                     </Pressable>
+
                     <View style={styles.Contenido}>
-                        <ScrollView 
-                            horizontal 
+                        <ScrollView
+                            horizontal
+                            style={styles.scrollView}
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.contenedorScroll}
-                            >
+                        >
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                        </ScrollView>
+                    </View>
+
+                    <Pressable style={styles.Gestor}>
+                        <Text style={styles.gestorTexto}>Contraseñas</Text>
+                    </Pressable>
+
+                    <View style={styles.Contenido}>
+                        <ScrollView
+                            horizontal
+                            style={styles.scrollView}
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.contenedorScroll}
+                        >
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
+                            <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                        </ScrollView>
+                    </View>
+
+                    <Pressable style={styles.Gestor}>
+                        <Text style={styles.gestorTexto}>Contraseñas</Text>
+                    </Pressable>
+
+                    <View style={styles.Contenido}>
+                        <ScrollView
+                            horizontal
+                            style={styles.scrollView}
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.contenedorScroll}
+                        >
                             <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
                             <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
                             <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
@@ -29,52 +73,65 @@ export default function Inicio(){
                         </ScrollView>
                     </View>
                 </View>
-
-            </View>
+            </SafeAreaView>
+        </View>
     );
-
 }
 
-const Styles = (width: number, height: number) => StyleSheet.create({
+const Styles = (width: number) => StyleSheet.create({
+    Wrapper: {
+        flex: 1,
+        backgroundColor: "#8f1212",
+    },
     Body: {
-        flex:1,
-        backgroundColor: "#000000",
-        width: width,
-        height: height,
+        flex: 1,
+        backgroundColor: "#8f1212",
+    },
+    LogoContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 20,
+        marginBottom: 10,
     },
     Logo: {
-        alignItems:"center",
-        maxHeight: 200,
-        maxWidth: 250,
-        margin:"auto",
+        width: 200,
+        height: 160,
     },
-    CajaImg:{
-        width:"auto",
-        height:"auto"
+    Seccion: {
+        marginBottom: 10,
     },
-    Gestor:{
-        backgroundColor:"hsl(83, 69%, 48%)",
-        border:"none",
+    Gestor: {
+        backgroundColor: "hsl(83, 69%, 48%)",
         borderRadius: 10,
         padding: 10,
-        marginLeft: width*0.1,
-        width: width*0.3,
+        marginLeft: width * 0.1,
+        width: width * 0.3,
         marginBottom: 10,
-        textAlign:"center",
-        shadowRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        // shadowColor: "#000",
+        // shadowOffset: { width: 0, height: 2 },
+        // shadowOpacity: 0.3,
+        // shadowRadius: 4,
+        // elevation: 4,
     },
-    Contenido:{
-        backgroundColor:"#72727265",
+    gestorTexto: {
+        color: "red",
+        fontSize: 40,
+        fontWeight: "bold",
+    },
+    Contenido: {
+        backgroundColor: "#72727265",
         borderRadius: 10,
         padding: 10,
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-around",
         marginBottom: 10,
-        height: width*0.3,
-        width: width*0.8,
+        height: width * 0.3,
+        width: width * 0.8,
         alignSelf: "center",
-
+        justifyContent: "center",
+    },
+    scrollView: {
+        width: '100%',
     },
     contenedorScroll: {
         paddingHorizontal: 16,
@@ -90,4 +147,4 @@ const Styles = (width: number, height: number) => StyleSheet.create({
         borderRadius: 8,
     },
     texto: { color: '#fff', fontWeight: 'bold' },
-})
+});
