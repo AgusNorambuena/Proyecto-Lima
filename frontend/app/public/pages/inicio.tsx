@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -15,6 +15,7 @@ export default function Inicio() {
     
 
     return (
+      
         <View style={styles.Wrapper}>
             <StatusBar style="light" />
             <SafeAreaView style={styles.Body}>
@@ -131,7 +132,7 @@ const Styles = (width: number) => StyleSheet.create({
     },
     Body: {
         flex: 1,
-        backgroundColor: "#e7e7e7",
+        backgroundColor: "#fff",
     },
     Modos:{
         backgroundColor: "#0e249e",
