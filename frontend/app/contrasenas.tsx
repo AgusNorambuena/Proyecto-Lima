@@ -19,6 +19,16 @@ export default function Contraseñas() {
                             Aqui puedes guardar tus contraseñas de forma segura y acceder a ellas cuando lo necesites. Asegúrate de mantener tu información protegida y no compartir tus contraseñas con nadie.
                         </Text>
                     </View>
+                    <View style={{ padding: 20 }}>
+                        <Text style={styles.titulofuncional}>
+                            Funcionalidades
+                        </Text>
+                        <Text style={styles.textoNormal}>
+                            - Crear y gestionar contraseñas
+                            - Generar contraseñas seguras
+                            - Buscar y filtrar contraseñas
+                        </Text>
+                    </View>
                     <View >
                         <View style={styles.searchContainer}>
                             <Ionicons name="search" size={20} color="black" style={styles.icon} />
@@ -31,16 +41,7 @@ export default function Contraseñas() {
                             />
                         </View>
                     </View>
-                    <View style={{ padding: 20 }}>
-                        <Text style={styles.titulo}>
-                            Funcionalidades
-                        </Text>
-                        <Text style={styles.textoNormal}>
-                            - Crear y gestionar contraseñas
-                            - Generar contraseñas seguras
-                            - Buscar y filtrar contraseñas
-                        </Text>
-                    </View>
+                    
                     <MenuContraseñas/>
                 </ScrollView>
             </SafeAreaView>
@@ -56,8 +57,12 @@ const styles = StyleSheet.create({
     fontSize: 40, // Tamaño grande para títulos
     fontWeight: 'bold',
   },
+  titulofuncional: {
+    fontSize: 40, // Tamaño grande para títulos
+    fontWeight: 'bold',
+  },
   textoNormal: {
-    fontSize: 16, // Tamaño estándar recomendado para párrafos
+    fontSize: 18, // Tamaño estándar recomendado para párrafos
   },
   buscador:{
     borderWidth: 1,
