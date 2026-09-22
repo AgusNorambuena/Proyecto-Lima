@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   titulofuncional: {
-    fontSize: 40, // Tamaño grande para títulos
+    fontSize: 30, // Tamaño grande para títulos
     fontWeight: 'bold',
   },
   textoNormal: {
