@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 
 export default function Inicio() {
     const { width } = useWindowDimensions();
@@ -40,17 +40,19 @@ export default function Inicio() {
 
                     <View style={styles.LogoContainer}>
                         <Image
-                            source={require('../../../assets/images/LogoLima.png')}
+                            source={require('../assets/images/LogoLima.png')}
                             style={styles.Logo}
                             resizeMode="contain"
                         />
                     </View>
-
+                    
                     <View style={styles.Seccion}>
+                        <Link href="/contrasenas" push asChild>
                         <Pressable style={styles.Gestor}
                         >
                             <Text style={styles.gestorTexto}>Contraseñas</Text>
                         </Pressable>
+                        </Link>
 
                         <View style={styles.Contenido}>
                             <ScrollView
@@ -103,24 +105,6 @@ export default function Inicio() {
                         </View>
                     </View>
                 </ScrollView>
-
-                {/* 👇 BARRA FLOTANTE ABSOLUTA FUERA DEL SCROLL (Se queda fija siempre abajo) 👇 */}
-                <View style={styles.barraFlotanteContainer}>
-                    {/* Botón Izquierda */}
-                    <Pressable style={styles.botonSecundario} onPress={() => console.log('Izquierda')}>
-                        <Ionicons name="person-outline" size={24} color="#fff" />
-                    </Pressable>
-
-                    {/* Botón Central (+) */}
-                    <Pressable style={styles.botonPrincipal} onPress={() => console.log('Botón Central +')}>
-                        <Ionicons name="add" size={32} color="#fff" />
-                    </Pressable>
-
-                    {/* Botón Derecha */}
-                    <Pressable style={styles.botonSecundario} onPress={() => console.log('Derecha')}>
-                        <Ionicons name="settings-outline" size={24} color="#fff" />
-                    </Pressable>
-                </View>
             </SafeAreaView>
         </View>
     );
