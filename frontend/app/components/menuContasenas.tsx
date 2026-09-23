@@ -2,7 +2,12 @@ import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, View, Pressable, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function MenuContraseñas() {
+// Agregamos la interfaz de TypeScript para aceptar la prop de búsqueda
+interface Props {
+  textoBusqueda?: string;
+}
+
+export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
 
@@ -12,11 +17,10 @@ export default function MenuContraseñas() {
   const toggleMenu = () => {
     const toValue = isOpen ? 0 : 1;
 
-    // Ejecutamos la animación de forma fluida
     Animated.timing(animationController, {
       toValue,
-      duration: 250, // Duración en milisegundos
-      useNativeDriver: false, // Debe estar en false porque animamos la altura/opacidad
+      duration: 250,
+      useNativeDriver: false,
     }).start();
 
     setIsOpen(!isOpen);
@@ -25,7 +29,6 @@ export default function MenuContraseñas() {
   const seleccionarOpcion = (opcion: string) => {
     setCategoriaSeleccionada(opcion);
     
-    // Cierra el menú al seleccionar una opción
     Animated.timing(animationController, {
       toValue: 0,
       duration: 200,
@@ -35,19 +38,13 @@ export default function MenuContraseñas() {
     setIsOpen(false);
   };
 
-  // Interpolación para transformar el valor (0 a 1) en opacidad y desplazamiento
-  const arrowAngle = animationController.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'], // Opcional: si prefieres rotar la flecha en lugar de cambiarla
-  });
-
   const animatedStyle = {
     opacity: animationController,
     transform: [
       {
         translateY: animationController.interpolate({
           inputRange: [0, 1],
-          outputRange: [-10, 0], // Pequeño efecto de deslizamiento vertical
+          outputRange: [-10, 0],
         }),
       },
     ],
@@ -60,7 +57,6 @@ export default function MenuContraseñas() {
         <Ionicons name="folder-outline" size={20} color="#4f46e5" style={styles.folderIcon} />
         <Text style={styles.headerText}>{categoriaSeleccionada}</Text>
         
-        {/* El icono cambia dinámicamente según la variable `isOpen` */}
         <Ionicons 
           name={isOpen ? "chevron-up" : "chevron-down"} 
           size={20} 
@@ -136,7 +132,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     overflow: 'hidden',
-    elevation: 2, // Sombra para Android
+    elevation: 2,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
