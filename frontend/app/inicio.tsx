@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,7 +17,11 @@ export default function Inicio() {
     const styles = Styles(width, isDarkMode);
 
     return (
-        <View style={styles.Wrapper}>
+        <ImageBackground 
+            source={isDarkMode ? require('../assets/images/FondoLimaOscuro.png') : require('../assets/images/FondoLima.png')} 
+            style={styles.Wrapper}
+            resizeMode="cover"
+        >
             {/* Cambiamos el estilo de la barra de estado según el modo */}
             <StatusBar style={isDarkMode ? "light" : "dark"} />
             
@@ -106,18 +110,18 @@ export default function Inicio() {
                     </View>
                 </ScrollView>
             </SafeAreaView>
-        </View>
+        </ImageBackground>
     );
 }
 
 const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     Wrapper: {
         flex: 1,
-        backgroundColor: isDarkMode ? '#121212' : '#fff',
+        
     },
     Body: {
         flex: 1,
-        backgroundColor: isDarkMode ? '#121212' : '#fff',
+        backgroundColor: 'transparent',
         position: 'relative', // Vital para que la barra absoluta se ancle a este contenedor y no a toda la pantalla por detrás del notch
     },
     scrollContent: {
