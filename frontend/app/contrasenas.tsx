@@ -79,6 +79,10 @@ export default function Contraseñas() {
         return coincideTexto && coincideCategoria;
     });
 
+console.log("Categoría activa:", categoriaSeleccionada);
+console.log("Texto de búsqueda:", texto);
+console.log("Resultados filtrados:", contraseñasFiltradas.length);
+
     return (
         <SafeAreaView style={styles.safeArea}>
             {/* 4. Aplicamos el fondo general a la pantalla */}
