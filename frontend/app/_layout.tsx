@@ -1,13 +1,12 @@
 import React from "react";
-import { Slot, usePathname } from "expo-router";
+import { Slot, useRouter } from "expo-router";
 import { View, ScrollView, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-export default function RootLayout() {
+export default () => {
     const insets = useSafeAreaInsets();
-    const pathname = usePathname();
-    const mostrarBarra = pathname !== "/";
+    const router = useRouter();
 
     return (
         <View style={styles.container}>
@@ -16,7 +15,7 @@ export default function RootLayout() {
             </ScrollView>
 
             {/* Barra flotante, fuera del ScrollView, siempre montada y visible */}
-            {mostrarBarra && <View style={[styles.barraFlotanteContainer, { bottom: insets.bottom + 15 }]}>
+            <View style={[styles.barraFlotanteContainer, { bottom: insets.bottom + 15 }]}>
                 <Pressable style={styles.botonSecundario} onPress={() => console.log("Izquierda")}>
                     <Ionicons name="person-outline" size={24} color="#fff" />
                 </Pressable>
@@ -28,7 +27,7 @@ export default function RootLayout() {
                 <Pressable style={styles.botonSecundario} onPress={() => console.log("Derecha")}>
                     <Ionicons name="settings-outline" size={24} color="#fff" />
                 </Pressable>
-            </View>}
+            </View>
         </View>
     );
 };
