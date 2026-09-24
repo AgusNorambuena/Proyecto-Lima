@@ -49,7 +49,7 @@ public class PasswordController {
                 .map(existente -> {
                     existente.setTitulo(datos.getTitulo());
                     existente.setUsuarioCuenta(datos.getUsuarioCuenta());
-                    existente.setContrasenia(datos.getContrasenia());
+                    existente.setPassword(datos.getPassword());
                     existente.setCategoria(datos.getCategoria());
                     existente.setUrl(datos.getUrl());
                     existente.setNotas(datos.getNotas());
