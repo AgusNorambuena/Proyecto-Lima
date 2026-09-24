@@ -1,38 +1,65 @@
 package com.escuela.Lima.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "passwords")
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Password {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Spring Boot la convierte en columna 'id' (Primary Key automáticamente)
+    private Long id;
 
-    @Column(nullable = false)
-    private String nombre; // Ejemplo: "Gmail Personal"
+    @Column(nullable = false, length = 100)
+    private String titulo;
 
-    @Column(name = "username_or_email")
-    private String username; // El usuario de esa cuenta
+    @Column(nullable = false, length = 150)
+    private String usuarioCuenta;
 
-    @Column(nullable = false, name = "password")
-    private String contraseña; // La contraseña cifrada (Obligatoria)
+    @Column(nullable = false, length = 500)
+    private String contrasenia;
 
-    private String url; // Opcional, se convierte en columna 'url' automáticamente
+    @Column(length = 100)
+    private String categoria;
 
-    @Column(columnDefinition = "TEXT")
-    private String notes; // Opcional, le decimos que sea de tipo TEXT por si la nota es larga
+    @Column(length = 255)
+    private String url;
 
+    @Column(length = 500)
+    private String notas;
+
+    // Dueño de la contraseña. Opcional por ahora (nullable),
+    // así se pueden crear y borrar contraseñas sin usuario.
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Relación con el usuario
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
 
-    // Getters y Setters...
+    @Column(name = "fecha_creacion", updatable = false)
+    private LocalDateTime fechaCreacion;
+
+    @Column(name = "fecha_actualizacion")
+    private LocalDateTime fechaActualizacion;
+
+    @PrePersist
+    protected void alCrear() {
+        this.fechaCreacion = LocalDateTime.now();
+        this.fechaActualizacion = this.fechaCreacion;
+    }
+
+    @PreUpdate
+    protected void alActualizar() {
+        this.fechaActualizacion = LocalDateTime.now();
+    }
 }
