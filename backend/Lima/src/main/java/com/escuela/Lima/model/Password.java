@@ -27,8 +27,11 @@ public class Password {
     @Column(nullable = false, length = 150)
     private String usuarioCuenta;
 
-    @Column(nullable = false, length = 500)
-    private String contrasenia;
+    @Column(name = "password", nullable = false, length = 500)
+    private String password;
+
+    @Column(nullable = false, length = 100)
+    private String nombre;
 
     @Column(length = 100)
     private String categoria;
