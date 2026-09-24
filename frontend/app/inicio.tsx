@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView, ImageBackground, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -16,8 +16,34 @@ export default function Inicio() {
     // Generamos los estilos pasando el ancho y el estado del modo oscuro
     const styles = Styles(width, isDarkMode);
 
+    // Opacidad modo oscuro
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+ 
+    useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: isDarkMode ? 1 : 0,
+            duration: 300, // Duración en milisegundos de la transición
+            useNativeDriver: true, // Optimización de rendimiento
+        }).start();
+    }, [isDarkMode]);
+    
     return (
         <View style={styles.Wrapper}>
+    {/* Fondo Claro (Fijo en la base) */}
+    <ImageBackground 
+        source={require('../assets/images/FondoLima.png')} 
+        style={[StyleSheet.absoluteFill, { flex: 1 }]}
+        resizeMode="cover"
+    />
+
+    {/* Fondo Oscuro (Animado encima) */}
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+        <ImageBackground 
+            source={require('../assets/images/FondoLimaOscuro.png')} 
+            style={{ flex: 1 }}
+            resizeMode="cover"
+        />
+    </Animated.View>
             {/* Cambiamos el estilo de la barra de estado según el modo */}
             <StatusBar style={isDarkMode ? "light" : "dark"} />
             
@@ -113,11 +139,11 @@ export default function Inicio() {
 const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     Wrapper: {
         flex: 1,
-        backgroundColor: isDarkMode ? '#121212' : '#fff',
+        position: 'relative',
     },
     Body: {
         flex: 1,
-        backgroundColor: isDarkMode ? '#121212' : '#fff',
+        backgroundColor: 'transparent',
         position: 'relative', // Vital para que la barra absoluta se ancle a este contenedor y no a toda la pantalla por detrás del notch
     },
     scrollContent: {

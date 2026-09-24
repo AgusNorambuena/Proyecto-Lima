@@ -2,16 +2,15 @@ import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, View, Pressable, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Agregamos la interfaz de TypeScript para aceptar la prop de búsqueda
 interface Props {
   textoBusqueda?: string;
+  onSeleccionarCategoria?: (categoria: string) => void; // Sugerencia: callback para comunicar con el componente padre
 }
 
 export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
 
-  // Valor animado que irá de 0 (cerrado) a 1 (abierto)
   const animationController = useRef(new Animated.Value(0)).current;
 
   const toggleMenu = () => {
@@ -50,10 +49,10 @@ export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
     ],
   };
 
-  return (
+return (
     <View style={styles.container}>
-      {/* Botón principal del menú (Cabecera) */}
-      <Pressable style={styles.header} onPress={toggleMenu}>
+      {/* Botón principal del menú */}
+      <Pressable onPress={toggleMenu} style={styles.header}>
         <Ionicons name="folder-outline" size={20} color="#4f46e5" style={styles.folderIcon} />
         <Text style={styles.headerText}>{categoriaSeleccionada}</Text>
         
@@ -65,37 +64,38 @@ export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
       </Pressable>
 
       {/* Contenido desplegable animado */}
-      {isOpen && (
-        <Animated.View style={[styles.dropdown, animatedStyle]}>
-          <Pressable 
-            style={styles.option} 
-            onPress={() => seleccionarOpcion('Todas las contraseñas')}
-          >
-            <Text style={styles.optionText}>📁 Todas las contraseñas</Text>
-          </Pressable>
+      <Animated.View 
+        pointerEvents={isOpen ? 'auto' : 'none'} 
+        style={[styles.dropdown, animatedStyle]}
+      >
+        <Pressable 
+          style={styles.option} 
+          onPress={() => seleccionarOpcion('Todas las contraseñas')}
+        >
+          <Text style={styles.optionText}>📁 Todas las contraseñas</Text>
+        </Pressable>
 
-          <Pressable 
-            style={styles.option} 
-            onPress={() => seleccionarOpcion('Contraseñas Personales')}
-          >
-            <Text style={styles.optionText}>🔑 Contraseñas Personales</Text>
-          </Pressable>
+        <Pressable 
+          style={styles.option} 
+          onPress={() => seleccionarOpcion('Contraseñas Personales')}
+        >
+          <Text style={styles.optionText}>🔑 Contraseñas Personales</Text>
+        </Pressable>
 
-          <Pressable 
-            style={styles.option} 
-            onPress={() => seleccionarOpcion('Trabajo y Servidores')}
-          >
-            <Text style={styles.optionText}>💼 Trabajo y Servidores</Text>
-          </Pressable>
+        <Pressable 
+          style={styles.option} 
+          onPress={() => seleccionarOpcion('Trabajo y Servidores')}
+        >
+          <Text style={styles.optionText}>💼 Trabajo y Servidores</Text>
+        </Pressable>
 
-          <Pressable 
-            style={styles.option} 
-            onPress={() => seleccionarOpcion('Redes Sociales')}
-          >
-            <Text style={styles.optionText}>🌐 Redes Sociales</Text>
-          </Pressable>
-        </Animated.View>
-      )}
+        <Pressable 
+          style={styles.option} 
+          onPress={() => seleccionarOpcion('Redes Sociales')}
+        >
+          <Text style={styles.optionText}>🌐 Redes Sociales</Text>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -105,6 +105,9 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
     marginTop: 20,
+    // CAMBIO 2: zIndex y posición relativa para superponer el desplegable
+    zIndex: 1000, 
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
@@ -126,15 +129,20 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   dropdown: {
-    marginTop: 5,
+    // CAMBIO 3: Posición absoluta para flotar sobre otros componentes
+    position: 'absolute',
+    top: 55,
+    left: 20,
+    right: 20,
     backgroundColor: '#ffffff',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
   },
   option: {
