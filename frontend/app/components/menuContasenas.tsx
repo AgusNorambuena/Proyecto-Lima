@@ -7,10 +7,10 @@ interface Props {
   onSeleccionarCategoria?: (categoria: string) => void; 
 }
 
-export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
+export default function MenuContraseñas({ textoBusqueda = '', onSeleccionarCategoria }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
-
+  
   const animationController = useRef(new Animated.Value(0)).current;
 
   const toggleMenu = () => {
@@ -27,7 +27,11 @@ export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
 
   const seleccionarOpcion = (opcion: string) => {
     setCategoriaSeleccionada(opcion);
-    
+
+    if (onSeleccionarCategoria) {
+      onSeleccionarCategoria(opcion);
+    }
+
     Animated.timing(animationController, {
       toValue: 0,
       duration: 200,
