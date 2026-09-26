@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -16,24 +16,33 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MenuContraseñas from './components/menuContasenas';
 
 interface Credencial {
-  id: string;
+  id: number;          
+  titulo: string;        // <-- Añadido para que coincida con el backend
   nombre: string;
-  usuario: string;
-  clave: string;
+  usuarioCuenta: string; 
+  password: string;      
   categoria: string;
 }
 
-const DATOS_MOCK: Credencial[] = [
-  { id: '1', nombre: 'Gmail Personal', usuario: 'santino@gmail.com', clave: 'MiClaveSegura123!', categoria: 'Contraseñas Personales' },
-  { id: '2', nombre: 'Netflix', usuario: 'santino@gmail.com', clave: 'Peliculas2026*', categoria: 'Contraseñas Personales' },
-  { id: '3', nombre: 'Servidor VPS', usuario: 'dev_user', clave: 'ServerPass#88', categoria: 'Trabajo y Servidores' },
-  { id: '4', nombre: 'Instagram', usuario: '@santino_ig', clave: 'SocialMedia99!', categoria: 'Redes Sociales' },
-];
+// Cambia esta URL por la dirección real de tu API backend
+const API_URL = 'http://acava la ip de wifi de la compuuuuuuuu/api/Passwords';
 
 export default function Contraseñas() {
     const [texto, setTexto] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
-    const [visibles, setVisibles] = useState<{ [key: string]: boolean }>({});
+    const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
+
+    // Estado para manejar dinámicamente el listado de contraseñas y control de carga
+    const [listaContraseñas, setListaContraseñas] = useState<Credencial[]>([]);
+    const [cargando, setCargando] = useState(false);
+
+    // Estados para controlar la visibilidad del modal y los datos del formulario
+    const [modalVisible, setModalVisible] = useState(false);
+    const [nuevoTitulo, setNuevoTitulo] = useState(''); // <-- Estado para el título
+    const [nuevoNombre, setNuevoNombre] = useState('');
+    const [nuevoUsuario, setNuevoUsuario] = useState('');
+    const [nuevaClave, setNuevaClave] = useState('');
+    const [nuevaCategoria, setNuevaCategoria] = useState('Contraseñas Personales');
 
     // === AGREGADO 1: Estado para manejar dinámicamente el listado de contraseñas ===
     const [listaContraseñas, setListaContraseñas] = useState<Credencial[]>(DATOS_MOCK);
@@ -71,7 +80,38 @@ export default function Contraseñas() {
       badgeText: isDark ? '#4b5563' : '#d1d5db',
     };
 
-    const toggleVisibilidad = (id: string) => {
+    // === API: Obtener listado de contraseñas al cargar el componente ===
+    const obtenerContraseñasAPI = async () => {
+        try {
+            setCargando(true);
+            const response = await fetch(API_URL, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.log("Error GET Status:", response.status, errorText);
+                throw new Error('Error al obtener las contraseñas desde el servidor.');
+            }
+
+            const data: Credencial[] = await response.json();
+            setListaContraseñas(data);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error de conexión', 'No se pudo conectar con la API para cargar las contraseñas.');
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    useEffect(() => {
+        obtenerContraseñasAPI();
+    }, []);
+
+    const toggleVisibilidad = (id: number) => {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
@@ -104,8 +144,9 @@ export default function Contraseñas() {
     // Modificado para filtrar sobre listaContraseñas en vez del array estático DATOS_MOCK
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
         const coincideTexto = 
-            item.nombre.toLowerCase().includes(texto.toLowerCase()) ||
-            item.usuario.toLowerCase().includes(texto.toLowerCase());
+            tituloVal.toLowerCase().includes(texto.toLowerCase()) ||
+            nombreVal.toLowerCase().includes(texto.toLowerCase()) ||
+            usuarioVal.toLowerCase().includes(texto.toLowerCase());
 
         const coincideCategoria = 
             categoriaSeleccionada === 'Todas las contraseñas' || 
@@ -176,7 +217,14 @@ export default function Contraseñas() {
                         imageStyle={styles.encuadreImageRadius}
                         resizeMode="cover"
                     >
-                        {contraseñasFiltradas.length === 0 ? (
+                        {cargando && listaContraseñas.length === 0 ? (
+                            <View style={{ paddingVertical: 20 }}>
+                                <ActivityIndicator size="small" color={colors.cardSubtext} />
+                                <Text style={[styles.vacioTexto, { color: colors.cardSubtext }]}>
+                                    Cargando contraseñas...
+                                </Text>
+                            </View>
+                        ) : contraseñasFiltradas.length === 0 ? (
                             <Text style={[styles.vacioTexto, { color: colors.cardSubtext }]}>
                                 No se encontraron contraseñas.
                             </Text>
@@ -189,10 +237,10 @@ export default function Contraseñas() {
                                         <View style={styles.cardHeader}>
                                             <View>
                                                 <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
-                                                    {item.nombre}
+                                                    {item.titulo} {/* Muestra el título en la tarjeta */}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
-                                                    {item.usuario}
+                                                    {item.nombre} - {item.usuarioCuenta}
                                                 </Text>
                                             </View>
                                             <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
@@ -204,7 +252,7 @@ export default function Contraseñas() {
 
                                         <View style={[styles.claveContainer, { backgroundColor: colors.claveBg, borderColor: colors.searchBorder }]}>
                                             <Text style={[styles.claveTexto, { color: colors.claveText }]}>
-                                                {esVisible ? item.clave : '••••••••••••'}
+                                                {esVisible ? item.password : '••••••••••••'}
                                             </Text>
                                             <Pressable onPress={() => toggleVisibilidad(item.id)} style={styles.ojoBtn}>
                                                 <Ionicons 
@@ -307,7 +355,7 @@ export default function Contraseñas() {
             </ImageBackground>
         </SafeAreaView>
     );
-}   
+}  
 
 const styles = StyleSheet.create({
   safeArea: {

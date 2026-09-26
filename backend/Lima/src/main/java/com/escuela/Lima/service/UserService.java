@@ -2,7 +2,6 @@ package com.escuela.Lima.service;
 
 import com.escuela.Lima.model.User;
 import com.escuela.Lima.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -11,12 +10,16 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    /*private final BCryptPasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
-    }
+    }*/
 
     // Registrar un nuevo usuario
     public User registerUser(User user) {
@@ -27,7 +30,7 @@ public class UserService {
         }
 
         // Hashear la contraseña antes de guardarla
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        String hashedPassword = user.getPassword();
         user.setPassword(hashedPassword);
 
         return userRepository.save(user);

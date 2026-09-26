@@ -155,7 +155,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         zIndex: 10,
     },
     Modos: {
-        backgroundColor: isDarkMode ? '#f1c40f' : '#0e249e',
+        backgroundColor: isDarkMode ? "hsl(83, 69%, 48%)" : '#0e249e',
         borderRadius: 25,
         height: 50,
         width: 50,
