@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   textoBusqueda?: string;
-  onSeleccionarCategoria?: (categoria: string) => void; // Sugerencia: callback para comunicar con el componente padre
+  onSeleccionarCategoria?: (categoria: string) => void; 
 }
 
-export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
+export default function MenuContraseñas({ textoBusqueda = '', onSeleccionarCategoria }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
-
+  
   const animationController = useRef(new Animated.Value(0)).current;
 
   const toggleMenu = () => {
@@ -27,7 +27,11 @@ export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
 
   const seleccionarOpcion = (opcion: string) => {
     setCategoriaSeleccionada(opcion);
-    
+
+    if (onSeleccionarCategoria) {
+      onSeleccionarCategoria(opcion);
+    }
+
     Animated.timing(animationController, {
       toValue: 0,
       duration: 200,
@@ -49,7 +53,7 @@ export default function MenuContraseñas({ textoBusqueda = '' }: Props) {
     ],
   };
 
-return (
+  return (
     <View style={styles.container}>
       {/* Botón principal del menú */}
       <Pressable onPress={toggleMenu} style={styles.header}>
@@ -72,28 +76,32 @@ return (
           style={styles.option} 
           onPress={() => seleccionarOpcion('Todas las contraseñas')}
         >
-          <Text style={styles.optionText}>📁 Todas las contraseñas</Text>
+          <Ionicons name="file-tray-full-outline" size={18} color="#4b5563" style={styles.optionIcon} />
+          <Text style={styles.optionText}>Todas las contraseñas</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Contraseñas Personales')}
         >
-          <Text style={styles.optionText}>🔑 Contraseñas Personales</Text>
+          <Ionicons name="key-outline" size={18} color="#4b5563" style={styles.optionIcon} />
+          <Text style={styles.optionText}>Contraseñas Personales</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Trabajo y Servidores')}
         >
-          <Text style={styles.optionText}>💼 Trabajo y Servidores</Text>
+          <Ionicons name="briefcase-outline" size={18} color="#4b5563" style={styles.optionIcon} />
+          <Text style={styles.optionText}>Trabajo y Servidores</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Redes Sociales')}
         >
-          <Text style={styles.optionText}>🌐 Redes Sociales</Text>
+          <Ionicons name="globe-outline" size={18} color="#4b5563" style={styles.optionIcon} />
+          <Text style={styles.optionText}>Redes Sociales</Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -105,7 +113,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
     marginTop: 20,
-    // CAMBIO 2: zIndex y posición relativa para superponer el desplegable
     zIndex: 1000, 
     position: 'relative',
   },
@@ -129,7 +136,6 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   dropdown: {
-    // CAMBIO 3: Posición absoluta para flotar sobre otros componentes
     position: 'absolute',
     top: 55,
     left: 20,
@@ -146,10 +152,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   option: {
+    flexDirection: 'row',       
+    alignItems: 'center',       
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
+  },
+  optionIcon: {
+    marginRight: 10,            
   },
   optionText: {
     fontSize: 15,
