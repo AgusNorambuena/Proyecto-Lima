@@ -95,7 +95,7 @@ export default function Inicio() {
                         </View>
 
                         <Pressable style={styles.Gestor}>
-                            <Text style={styles.gestorTexto}>Contraseñas</Text>
+                            <Text style={styles.gestorTexto}>Agenda</Text>
                         </Pressable>
 
                         <View style={styles.Contenido}>
@@ -113,7 +113,7 @@ export default function Inicio() {
                         </View>
 
                         <Pressable style={styles.Gestor}>
-                            <Text style={styles.gestorTexto}>Contraseñas</Text>
+                            <Text style={styles.gestorTexto}>Gastos</Text>
                         </Pressable>
 
                         <View style={styles.Contenido}>
