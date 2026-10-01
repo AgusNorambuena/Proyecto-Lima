@@ -9,7 +9,8 @@ import {
   useColorScheme,
   ImageBackground,
   Modal,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,7 +18,7 @@ import MenuContraseñas from './components/menuContasenas';
 
 interface Credencial {
   id: number;          
-  titulo: string;        // <-- Añadido para que coincida con el backend
+  titulo: string;        
   nombre: string;
   usuarioCuenta: string; 
   password: string;      
@@ -25,7 +26,7 @@ interface Credencial {
 }
 
 // Cambia esta URL por la dirección real de tu API backend
-const API_URL = 'http://acava la ip de wifi de la compuuuuuuuu/api/Passwords';
+const API_URL = 'idtucasa:8080/api/Passwords'; // <-- Pon tu IP aquí
 
 export default function Contraseñas() {
     const [texto, setTexto] = useState('');
@@ -38,17 +39,7 @@ export default function Contraseñas() {
 
     // Estados para controlar la visibilidad del modal y los datos del formulario
     const [modalVisible, setModalVisible] = useState(false);
-    const [nuevoTitulo, setNuevoTitulo] = useState(''); // <-- Estado para el título
-    const [nuevoNombre, setNuevoNombre] = useState('');
-    const [nuevoUsuario, setNuevoUsuario] = useState('');
-    const [nuevaClave, setNuevaClave] = useState('');
-    const [nuevaCategoria, setNuevaCategoria] = useState('Contraseñas Personales');
-
-    // === AGREGADO 1: Estado para manejar dinámicamente el listado de contraseñas ===
-    const [listaContraseñas, setListaContraseñas] = useState<Credencial[]>(DATOS_MOCK);
-
-    // === AGREGADO 2: Estados para controlar la visibilidad del modal y los datos del formulario ===
-    const [modalVisible, setModalVisible] = useState(false);
+    const [nuevoTitulo, setNuevoTitulo] = useState('');
     const [nuevoNombre, setNuevoNombre] = useState('');
     const [nuevoUsuario, setNuevoUsuario] = useState('');
     const [nuevaClave, setNuevaClave] = useState('');
@@ -66,8 +57,8 @@ export default function Contraseñas() {
       : require('../assets/images/FondoLima.png');
 
     const colors = {
-      textPrimary: isDark ? '#ffffff' : '#000000',
-      textSecondary: isDark ? '#ffffff' : '#4b5563',
+      textPrimary: isDark ? '#3f3692' : '#ffffff',
+      textSecondary: isDark ? '#272f5e' : '#4b5563',
       searchBg: isDark ? 'rgba(30, 30, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)',
       searchBorder: isDark ? '#333333' : '#ccc',
       searchText: isDark ? '#ffffff' : '#000000',
@@ -80,7 +71,7 @@ export default function Contraseñas() {
       badgeText: isDark ? '#4b5563' : '#d1d5db',
     };
 
-    // === API: Obtener listado de contraseñas al cargar el componente ===
+// === API: Obtener listado de contraseñas al cargar el componente ===
     const obtenerContraseñasAPI = async () => {
         try {
             setCargando(true);
@@ -116,33 +107,64 @@ export default function Contraseñas() {
     };
 
     // === AGREGADO 3: Función para validar y agregar la nueva contraseña ===
-    const guardarNuevaContraseña = () => {
-        if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
-            Alert.alert('Campos incompletos', 'Por favor completa la aplicación, usuario y contraseña.');
-            return;
+    const guardarNuevaContraseña = async () => {
+    if (!nuevoTitulo.trim() || !nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
+        Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
+        return;
+    }
+
+    // Mapeo exacto según el modelo de Java (Password.java)
+    const objetoEnviar = {
+        titulo: nuevoTitulo,
+        nombre: nuevoNombre,
+        usuarioCuenta: nuevoUsuario,
+        password: nuevaClave,
+        categoria: nuevaCategoria,
+    };
+
+    try {
+        setCargando(true);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(objetoEnviar),
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al guardar en el servidor');
         }
 
-        const nuevaCredencial: Credencial = {
-            id: Date.now().toString(),
-            nombre: nuevoNombre,
-            usuario: nuevoUsuario,
-            clave: nuevaClave,
-            categoria: nuevaCategoria,
-        };
+        // Recibimos el objeto guardado con su ID real generado por el backend
+        const nuevaCredencialGuardada: Credencial = await response.json();
 
-        // Insertamos el nuevo registro al principio de la lista
-        setListaContraseñas([nuevaCredencial, ...listaContraseñas]);
+        // Actualizamos el estado con la respuesta del backend
+        setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
 
         // Reseteamos el formulario y cerramos el modal
+        setNuevoTitulo('');
         setNuevoNombre('');
         setNuevoUsuario('');
         setNuevaClave('');
         setNuevaCategoria('Contraseñas Personales');
         setModalVisible(false);
-    };
 
-    // Modificado para filtrar sobre listaContraseñas en vez del array estático DATOS_MOCK
+        Alert.alert('Éxito', 'Contraseña guardada correctamente.');
+    } catch (error) {
+        console.error(error);
+        Alert.alert('Error', 'No se pudo guardar la contraseña en la base de datos.');
+    } finally {
+        setCargando(false);
+    }
+};
+
+    // Filtro corregido extrayendo propiedades de `item`
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
+        const tituloVal = item.titulo || '';
+        const nombreVal = item.nombre || '';
+        const usuarioVal = item.usuarioCuenta || '';
+
         const coincideTexto = 
             tituloVal.toLowerCase().includes(texto.toLowerCase()) ||
             nombreVal.toLowerCase().includes(texto.toLowerCase()) ||
@@ -169,7 +191,7 @@ export default function Contraseñas() {
                             Contraseñas
                         </Text>
                         <Text style={[styles.textoNormal, { color: colors.textSecondary }]}>
-                            Aqui puedes guardar tus contraseñas de forma segura y acceder a ellas cuando lo necesites. Asegúrate de mantener tu información protegida y no compartir tus contraseñas con nadie.
+                            Aquí puedes guardar tus contraseñas de forma segura y acceder a ellas cuando lo necesites.
                         </Text>
                     </View>
 
@@ -184,7 +206,6 @@ export default function Contraseñas() {
                         </Text>
                     </View>
 
-                    {/* === AGREGADO 4: Botón para abrir el formulario modal === */}
                     <View style={{ paddingHorizontal: 20, marginBottom: 15 }}>
                         <Pressable 
                             style={styles.btnAgregar} 
@@ -237,7 +258,7 @@ export default function Contraseñas() {
                                         <View style={styles.cardHeader}>
                                             <View>
                                                 <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
-                                                    {item.titulo} {/* Muestra el título en la tarjeta */}
+                                                    {item.titulo}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
                                                     {item.nombre} - {item.usuarioCuenta}
@@ -268,7 +289,7 @@ export default function Contraseñas() {
                         )}
                     </ImageBackground>
 
-                    {/* === AGREGADO 5: Modal con formulario para los 4 datos requeridos === */}
+                    {/* Modal con Formulario */}
                     <Modal
                         animationType="slide"
                         transparent={true}
@@ -280,6 +301,15 @@ export default function Contraseñas() {
                                 <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
                                     Nueva Contraseña
                                 </Text>
+
+                                <Text style={styles.label}>Título:</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
+                                    placeholder="Ej: Mi cuenta personal..."
+                                    placeholderTextColor="#888"
+                                    value={nuevoTitulo}
+                                    onChangeText={setNuevoTitulo}
+                                />
 
                                 <Text style={styles.label}>Aplicación / Servicio:</Text>
                                 <TextInput
@@ -384,8 +414,6 @@ const styles = StyleSheet.create({
   textoNormal: {
     fontSize: 18,
   },
-
-  // Estilo para el nuevo botón principal "Añadir Nueva Contraseña"
   btnAgregar: {
     backgroundColor: '#4f46e5',
     flexDirection: 'row',
@@ -399,7 +427,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -473,8 +500,6 @@ const styles = StyleSheet.create({
   ojoBtn: {
     padding: 2,
   },
-
-  // Estilos dedicados al Modal y Formulario
   modalBg: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
