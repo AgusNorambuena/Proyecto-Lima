@@ -1,7 +1,8 @@
 package com.escuela.Lima.controller;
 
 import com.escuela.Lima.model.Password;
-import com.escuela.Lima.repository.PasswordRepository;
+import com.escuela.Lima.service.PasswordService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,62 +10,48 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/Passwords")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/passwords")
 public class PasswordController {
 
-    private final PasswordRepository repository;
+    @Autowired
+    private PasswordService passwordService;
 
-    public PasswordController(PasswordRepository repository) {
-        this.repository = repository;
+    // 1. Crear una nueva contraseña
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<Password> createPassword(@PathVariable Long userId, @RequestBody Password password) {
+        Password nuevaPassword = passwordService.savePassword(userId, password);
+        return new ResponseEntity<>(nuevaPassword, HttpStatus.CREATED);
     }
 
-    // CREATE
-    @PostMapping
-    public ResponseEntity<Password> crear(@RequestBody Password password) {
-        password.setId(null);
-        Password guardada = repository.save(password);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
+    // 2. Obtener todas las contraseñas de un usuario
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Password>> getPasswordsByUser(@PathVariable Long userId) {
+        List<Password> passwords = passwordService.getPasswordsByUserId(userId);
+        return new ResponseEntity<>(passwords, HttpStatus.OK);
     }
 
-    // READ - todas
-    @GetMapping
-    public List<Password> listar() {
-        return repository.findAll();
+    // 3. Obtener una contraseña específica de un usuario
+    @GetMapping("/{passwordId}/user/{userId}")
+    public ResponseEntity<Password> getPasswordByIdAndUser(@PathVariable Long passwordId, @PathVariable Long userId) {
+        Password password = passwordService.getPasswordByIdAndUserId(passwordId, userId);
+        return new ResponseEntity<>(password, HttpStatus.OK);
     }
 
-    // READ - una
-    @GetMapping("/{id}")
-    public ResponseEntity<Password> obtener(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    // 4. ACTUALIZAR una contraseña
+    @PutMapping("/{passwordId}/user/{userId}")
+    public ResponseEntity<Password> updatePassword(
+            @PathVariable Long passwordId,
+            @PathVariable Long userId,
+            @RequestBody Password passwordDetails) {
+
+        Password passwordActualizada = passwordService.updatePassword(passwordId, userId, passwordDetails);
+        return new ResponseEntity<>(passwordActualizada, HttpStatus.OK);
     }
 
-    // UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<Password> actualizar(@PathVariable Long id,
-                                               @RequestBody Password datos) {
-        return repository.findById(id)
-                .map(existente -> {
-                    existente.setTitulo(datos.getTitulo());
-                    existente.setUsuarioCuenta(datos.getUsuarioCuenta());
-                    existente.setPassword(datos.getPassword());
-                    existente.setCategoria(datos.getCategoria());
-                    existente.setUrl(datos.getUrl());
-                    existente.setNotas(datos.getNotas());
-                    return ResponseEntity.ok(repository.save(existente));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        repository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    // 5. Eliminar una contraseña
+    @DeleteMapping("/{passwordId}/user/{userId}")
+    public ResponseEntity<String> deletePassword(@PathVariable Long passwordId, @PathVariable Long userId) {
+        passwordService.deletePassword(passwordId, userId);
+        return new ResponseEntity<>("Contraseña eliminada correctamente.", HttpStatus.OK);
     }
 }
