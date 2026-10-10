@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, 
   View, 
   Text, 
   ScrollView, 
@@ -10,36 +9,35 @@ import {
   ImageBackground,
   Modal,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useLocalSearchParams } from 'expo-router';
 import MenuContraseñas from './components/menuContasenas';
 
 interface Credencial {
   id: number;          
-  titulo: string;        
   nombre: string;
   usuarioCuenta: string; 
   password: string;      
   categoria: string;
 }
 
-// Cambia esta URL por la dirección real de tu API backend
-const API_URL = 'idtucasa:8080/api/Passwords'; // <-- Pon tu IP aquí
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Contraseñas() {
+    const { userId } = useLocalSearchParams();
+
     const [texto, setTexto] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
     const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
 
-    // Estado para manejar dinámicamente el listado de contraseñas y control de carga
     const [listaContraseñas, setListaContraseñas] = useState<Credencial[]>([]);
     const [cargando, setCargando] = useState(false);
 
-    // Estados para controlar la visibilidad del modal y los datos del formulario
     const [modalVisible, setModalVisible] = useState(false);
-    const [nuevoTitulo, setNuevoTitulo] = useState('');
     const [nuevoNombre, setNuevoNombre] = useState('');
     const [nuevoUsuario, setNuevoUsuario] = useState('');
     const [nuevaClave, setNuevaClave] = useState('');
@@ -71,11 +69,11 @@ export default function Contraseñas() {
       badgeText: isDark ? '#4b5563' : '#d1d5db',
     };
 
-// === API: Obtener listado de contraseñas al cargar el componente ===
     const obtenerContraseñasAPI = async () => {
+        if (!userId) return;
         try {
             setCargando(true);
-            const response = await fetch(API_URL, {
+            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -100,73 +98,63 @@ export default function Contraseñas() {
 
     useEffect(() => {
         obtenerContraseñasAPI();
-    }, []);
+    }, [userId]);
 
     const toggleVisibilidad = (id: number) => {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
-    // === AGREGADO 3: Función para validar y agregar la nueva contraseña ===
     const guardarNuevaContraseña = async () => {
-    if (!nuevoTitulo.trim() || !nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
-        Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
-        return;
-    }
-
-    // Mapeo exacto según el modelo de Java (Password.java)
-    const objetoEnviar = {
-        titulo: nuevoTitulo,
-        nombre: nuevoNombre,
-        usuarioCuenta: nuevoUsuario,
-        password: nuevaClave,
-        categoria: nuevaCategoria,
-    };
-
-    try {
-        setCargando(true);
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(objetoEnviar),
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al guardar en el servidor');
+        if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
+            Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
+            return;
         }
 
-        // Recibimos el objeto guardado con su ID real generado por el backend
-        const nuevaCredencialGuardada: Credencial = await response.json();
+        const objetoEnviar = {
+            nombre: nuevoNombre,
+            usuarioCuenta: nuevoUsuario,
+            password: nuevaClave,
+            categoria: nuevaCategoria,
+        };
 
-        // Actualizamos el estado con la respuesta del backend
-        setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
+        try {
+            setCargando(true);
+            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(objetoEnviar),
+            });
 
-        // Reseteamos el formulario y cerramos el modal
-        setNuevoTitulo('');
-        setNuevoNombre('');
-        setNuevoUsuario('');
-        setNuevaClave('');
-        setNuevaCategoria('Contraseñas Personales');
-        setModalVisible(false);
+            if (!response.ok) {
+                throw new Error('Error al guardar en el servidor');
+            }
 
-        Alert.alert('Éxito', 'Contraseña guardada correctamente.');
-    } catch (error) {
-        console.error(error);
-        Alert.alert('Error', 'No se pudo guardar la contraseña en la base de datos.');
-    } finally {
-        setCargando(false);
-    }
-};
+            const nuevaCredencialGuardada: Credencial = await response.json();
 
-    // Filtro corregido extrayendo propiedades de `item`
+            setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
+
+            setNuevoNombre('');
+            setNuevoUsuario('');
+            setNuevaClave('');
+            setNuevaCategoria('Contraseñas Personales');
+            setModalVisible(false);
+
+            Alert.alert('Éxito', 'Contraseña guardada correctamente.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'No se pudo guardar la contraseña en la base de datos.');
+        } finally {
+            setCargando(false);
+        }
+    };
+
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
-        const tituloVal = item.titulo || '';
         const nombreVal = item.nombre || '';
         const usuarioVal = item.usuarioCuenta || '';
 
         const coincideTexto = 
-            tituloVal.toLowerCase().includes(texto.toLowerCase()) ||
             nombreVal.toLowerCase().includes(texto.toLowerCase()) ||
             usuarioVal.toLowerCase().includes(texto.toLowerCase());
 
@@ -200,8 +188,8 @@ export default function Contraseñas() {
                             Funcionalidades
                         </Text>
                         <Text style={[styles.textoNormal, { color: colors.textSecondary }]}>
-                            - Crear y gestionar contraseñas{"\n"}
-                            - Generar contraseñas seguras{"\n"}
+                            - Crear y gestionar contraseñas{'\n'}
+                            - Generar contraseñas seguras{'\n'}
                             - Buscar y filtrar contraseñas
                         </Text>
                     </View>
@@ -258,10 +246,10 @@ export default function Contraseñas() {
                                         <View style={styles.cardHeader}>
                                             <View>
                                                 <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
-                                                    {item.titulo}
+                                                    {item.nombre}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
-                                                    {item.nombre} - {item.usuarioCuenta}
+                                                    - {item.usuarioCuenta}
                                                 </Text>
                                             </View>
                                             <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
@@ -301,15 +289,6 @@ export default function Contraseñas() {
                                 <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
                                     Nueva Contraseña
                                 </Text>
-
-                                <Text style={styles.label}>Título:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: Mi cuenta personal..."
-                                    placeholderTextColor="#888"
-                                    value={nuevoTitulo}
-                                    onChangeText={setNuevoTitulo}
-                                />
 
                                 <Text style={styles.label}>Aplicación / Servicio:</Text>
                                 <TextInput
@@ -385,8 +364,7 @@ export default function Contraseñas() {
             </ImageBackground>
         </SafeAreaView>
     );
-}  
-
+}
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

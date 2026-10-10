@@ -5,6 +5,11 @@ import com.escuela.Lima.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+@CrossOrigin(origins = "*") // Permite peticiones desde la app móvil en tu red local
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -15,16 +20,42 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Endpoint para registrarse: POST /api/users/register
+    // Endpoint de Registro
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
             User newUser = userService.registerUser(user);
-            // Por seguridad, limpiamos la contraseña antes de devolver la respuesta
+            // Ocultamos la contraseña en la respuesta por seguridad
             newUser.setPassword(null);
-            return ResponseEntity.ok(newUser);
+            return ResponseEntity.ok(newUser); // Retorna el JSON del usuario
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // Retornamos un JSON válido para el error en lugar de un String
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    // Endpoint de Login básico (sin JWT)
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody User loginRequest) {
+        Optional<User> userOpt = userService.findByEmail(loginRequest.getEmail());
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Comparamos la contraseña en texto plano con el hash de la BD
+            boolean isValid = userService.verificarPassword(loginRequest.getPassword(), user.getPassword());
+
+            if (isValid) {
+                // SOLUCIÓN: Devolvemos el objeto Usuario directamente (se convertirá en JSON)
+                user.setPassword(null);
+                return ResponseEntity.ok(user);
+            }
+        }
+
+        // Retornamos un JSON válido para credenciales inválidas en lugar de un String
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Credenciales inválidas.");
+        return ResponseEntity.status(401).body(errorResponse);
     }
 }

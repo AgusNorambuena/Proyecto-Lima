@@ -21,9 +21,6 @@ public class Password {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String titulo;
-
     @Column(nullable = false, length = 150)
     private String usuarioCuenta;
 
@@ -46,7 +43,7 @@ public class Password {
     // así se pueden crear y borrar contraseñas sin usuario.
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = true)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "fecha_creacion", updatable = false)
