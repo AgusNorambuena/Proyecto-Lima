@@ -1,90 +1,71 @@
-import { Text, View } from "react-native";
-import Inicio from "./inicio";
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 
-export default function Index() {
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Por favor ingresa tu email y contraseña.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const user = await response.json(); 
+        
+        // Navegamos a inicio y pasamos el userId como parámetro en la memoria de Expo Router
+        router.replace({
+          pathname: '/inicio',
+          params: { userId: user.id }
+        });
+        
+      } else {
+        Alert.alert("Error", "Credenciales incorrectas.");
+      }
+    } catch (error) {
+      console.error("Error en el login:", error);
+      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+    }
+  };
+
   return (
-    <View>
-      <Inicio/>
+    <View style={styles.container}>
+      <Text style={styles.title}>Proyecto Lima</Text>
+      <Text style={styles.subtitle}>Inicia sesión en tu bóveda</Text>
+
+      <TextInput style={styles.input} placeholder="Correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+      <TextInput style={styles.input} placeholder="Contraseña principal" value={password} onChangeText={setPassword} secureTextEntry />
+
+      <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
+        <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('../registro')}>
+        <Text style={styles.secondaryButtonText}>Crear una cuenta nueva</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
-//   ?? (Platform.OS === "android" ? "http://10.0.2.2:8080" : "http://localhost:8080");
-
-// export default function Index() {
-//   const router = useRouter();
-//   const [email, setEmail] = useState("admin@lima.local");
-//   const [password, setPassword] = useState("LimaAdmin2026!");
-//   const [error, setError] = useState("");
-//   const [loading, setLoading] = useState(false);
-
-//   const iniciarSesion = async () => {
-//     setError("");
-//     setLoading(true);
-
-//     try {
-//       const response = await fetch(`${API_URL}/api/users/login`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ email: email.trim(), password }),
-//       });
-
-//       if (!response.ok) {
-//         throw new Error("Correo o contraseña incorrectos.");
-//       }
-
-//       router.replace("/inicio");
-//     } catch (requestError) {
-//       setError(requestError instanceof TypeError
-//         ? "No se pudo conectar con el servidor. Revisa que el backend esté iniciado."
-//         : (requestError as Error).message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <Image source={require("../assets/images/LogoLima.png")} style={styles.logo} resizeMode="contain" />
-//       <View style={styles.form}>
-//         <Text style={styles.title}>Iniciar sesión</Text>
-//         <Text style={styles.subtitle}>Accede a tu espacio seguro</Text>
-//         <TextInput
-//           autoCapitalize="none"
-//           keyboardType="email-address"
-//           onChangeText={setEmail}
-//           placeholder="Correo electrónico"
-//           placeholderTextColor="#8b9a91"
-//           style={styles.input}
-//           value={email}
-//         />
-//         <TextInput
-//           onChangeText={setPassword}
-//           placeholder="Contraseña"
-//           placeholderTextColor="#8b9a91"
-//           secureTextEntry
-//           style={styles.input}
-//           value={password}
-//         />
-//         {!!error && <Text style={styles.error}>{error}</Text>}
-//         <Pressable disabled={loading} onPress={iniciarSesion} style={styles.button}>
-//           {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Entrar</Text>}
-//         </Pressable>
-//       </View>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, justifyContent: "center", padding: 28, backgroundColor: "#e9f2e5" },
-//   logo: { width: "100%", height: 150, marginBottom: 8 },
-//   form: { backgroundColor: "rgba(255,255,255,0.94)", borderRadius: 18, padding: 24, shadowColor: "#1d3526", shadowOpacity: 0.15, shadowRadius: 12, elevation: 4 },
-//   title: { color: "#183d28", fontSize: 28, fontWeight: "700", marginBottom: 6 },
-//   subtitle: { color: "#617268", fontSize: 15, marginBottom: 22 },
-//   input: { borderColor: "#cbd9ce", borderRadius: 10, borderWidth: 1, color: "#183d28", fontSize: 16, marginBottom: 12, paddingHorizontal: 14, paddingVertical: 13 },
-//   button: { alignItems: "center", backgroundColor: "#52b788", borderRadius: 10, justifyContent: "center", minHeight: 50, marginTop: 8 },
-//   buttonText: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
-//   error: { color: "#b42318", fontSize: 14, marginBottom: 4 },
-// });
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f5f5f5' },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#333', marginBottom: 10 },
+  subtitle: { fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 40 },
+  input: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd', fontSize: 16 },
+  primaryButton: { backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  secondaryButton: { padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  secondaryButtonText: { color: '#007bff', fontSize: 16, fontWeight: 'bold' }
+});

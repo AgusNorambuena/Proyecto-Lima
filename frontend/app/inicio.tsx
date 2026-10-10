@@ -3,13 +3,15 @@ import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter, Link } from 'expo-router';
+import { useRouter, Link, useLocalSearchParams } from 'expo-router'; // 1. IMPORTAR useLocalSearchParams
 
 export default function Inicio() {
     const { width } = useWindowDimensions();
-
     const router = useRouter();
-    
+
+    // 2. CAPTURAR EL userId QUE VIENE DESDE EL LOGIN
+    const { userId } = useLocalSearchParams();
+
     // Estado para controlar si está en modo oscuro (true) o claro (false)
     const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -18,39 +20,38 @@ export default function Inicio() {
 
     // Opacidad modo oscuro
     const fadeAnim = useRef(new Animated.Value(0)).current;
- 
+
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: isDarkMode ? 1 : 0,
-            duration: 300, // Duración en milisegundos de la transición
-            useNativeDriver: true, // Optimización de rendimiento
+            duration: 300,
+            useNativeDriver: true,
         }).start();
     }, [isDarkMode]);
-    
+
     return (
         <View style={styles.Wrapper}>
-    {/* Fondo Claro (Fijo en la base) */}
-    <ImageBackground 
-        source={require('../assets/images/FondoLima.png')} 
-        style={[StyleSheet.absoluteFill, { flex: 1 }]}
-        resizeMode="cover"
-    />
+            {/* Fondo Claro */}
+            <ImageBackground 
+                source={require('../assets/images/FondoLima.png')} 
+                style={[StyleSheet.absoluteFill, { flex: 1 }]}
+                resizeMode="cover"
+            />
 
-    {/* Fondo Oscuro (Animado encima) */}
-    <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
-        <ImageBackground 
-            source={require('../assets/images/FondoLimaOscuro.png')} 
-            style={{ flex: 1 }}
-            resizeMode="cover"
-        />
-    </Animated.View>
-            {/* Cambiamos el estilo de la barra de estado según el modo */}
+            {/* Fondo Oscuro */}
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+                <ImageBackground 
+                    source={require('../assets/images/FondoLimaOscuro.png')} 
+                    style={{ flex: 1 }}
+                    resizeMode="cover"
+                />
+            </Animated.View>
+
             <StatusBar style={isDarkMode ? "light" : "dark"} />
-            
+
             <SafeAreaView style={styles.Body} edges={['top', 'left', 'right']}>
-                {/* El ScrollView solo maneja el contenido que se desliza */}
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    {/* Caja de Modos con el icono vectorial integrado */}
+                    {/* Caja de Modos */}
                     <View style={styles.ModosContainer}>
                         <Pressable 
                             style={styles.Modos} 
@@ -71,13 +72,20 @@ export default function Inicio() {
                             resizeMode="contain"
                         />
                     </View>
-                    
+
                     <View style={styles.Seccion}>
-                        <Link href="/contrasenas" push asChild>
-                        <Pressable style={styles.Gestor}
+                        {/* 3. REENVIAR EL userId EN LOS PARÁMETROS A LA PANTALLA DE CONTRASEÑAS */}
+                        <Link 
+                            href={{
+                                pathname: "/contrasenas",
+                                params: { userId: userId }
+                            }} 
+                            push 
+                            asChild
                         >
-                            <Text style={styles.gestorTexto}>Contraseñas</Text>
-                        </Pressable>
+                            <Pressable style={styles.Gestor}>
+                                <Text style={styles.gestorTexto}>Contraseñas</Text>
+                            </Pressable>
                         </Link>
 
                         <View style={styles.Contenido}>
@@ -144,10 +152,10 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     Body: {
         flex: 1,
         backgroundColor: 'transparent',
-        position: 'relative', // Vital para que la barra absoluta se ancle a este contenedor y no a toda la pantalla por detrás del notch
+        position: 'relative',
     },
     scrollContent: {
-        paddingBottom: 110, // Espacio para que el último elemento haga scroll por encima de la barra flotante
+        paddingBottom: 110,
     },
     ModosContainer: {
         paddingHorizontal: 20,
@@ -167,7 +175,6 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         shadowRadius: 4,
         elevation: 4,
     },
-    // Estilos de la barra flotante fija inferior por encima de todo
     barraFlotanteContainer: {
         position: 'absolute',
         bottom: 15,
@@ -185,7 +192,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 5,
         elevation: 10,
-        zIndex: 999, // Prioridad máxima para que flote permanentemente
+        zIndex: 999,
     },
     botonSecundario: {
         width: 50,
@@ -202,7 +209,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         backgroundColor: '#52b788',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12, // Efecto estético de elevación para el botón central (+)
+        marginBottom: 12,
         borderWidth: 3,
         borderColor: isDarkMode ? '#121212' : '#fff',
     },
