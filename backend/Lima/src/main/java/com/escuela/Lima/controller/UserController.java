@@ -5,8 +5,11 @@ import com.escuela.Lima.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
+@CrossOrigin(origins = "*") // Permite peticiones desde la app móvil en tu red local
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -24,9 +27,12 @@ public class UserController {
             User newUser = userService.registerUser(user);
             // Ocultamos la contraseña en la respuesta por seguridad
             newUser.setPassword(null);
-            return ResponseEntity.ok(newUser);
+            return ResponseEntity.ok(newUser); // Retorna el JSON del usuario
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // Retornamos un JSON válido para el error en lugar de un String
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 
@@ -41,11 +47,15 @@ public class UserController {
             boolean isValid = userService.verificarPassword(loginRequest.getPassword(), user.getPassword());
 
             if (isValid) {
-                // Login exitoso (puedes devolver el ID y el email para que el cliente los use)
-                return ResponseEntity.ok("Login exitoso. Bienvenido ID: " + user.getId());
+                // SOLUCIÓN: Devolvemos el objeto Usuario directamente (se convertirá en JSON)
+                user.setPassword(null);
+                return ResponseEntity.ok(user);
             }
         }
 
-        return ResponseEntity.status(401).body("Credenciales inválidas.");
+        // Retornamos un JSON válido para credenciales inválidas en lugar de un String
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Credenciales inválidas.");
+        return ResponseEntity.status(401).body(errorResponse);
     }
 }
