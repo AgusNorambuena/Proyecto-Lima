@@ -39,7 +39,7 @@ public class UserController {
     // Endpoint de Login básico (sin JWT)
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginRequest) {
-        Optional<User> userOpt = userService.findByEmail(loginRequest.getEmail());
+        Optional<User> userOpt = userService.findByUsername(loginRequest.getUsername());
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
