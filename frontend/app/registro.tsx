@@ -24,7 +24,7 @@ export default function RegisterScreen() {
 
     try {
       // Hacemos el POST al endpoint de usuarios de tu backend
-      const response = await fetch(`${API_URL}/users/register`, {
+      const response = await fetch(`${API_URL}/api/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
