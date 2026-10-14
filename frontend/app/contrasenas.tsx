@@ -10,6 +10,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Clipboard,
   StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -73,7 +74,7 @@ export default function Contraseñas() {
         if (!userId) return;
         try {
             setCargando(true);
-            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,6 +105,11 @@ export default function Contraseñas() {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
+    // FUNCIÓN PARA COPIAR LA CONTRASEÑA EXACTA AL PORTAPAPELES
+    const copiarAlPortapapeles = (password: string) => {
+        Clipboard.setString(password);
+    };
+
     const guardarNuevaContraseña = async () => {
         if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
             Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
@@ -119,7 +125,7 @@ export default function Contraseñas() {
 
         try {
             setCargando(true);
-            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -148,6 +154,37 @@ export default function Contraseñas() {
         } finally {
             setCargando(false);
         }
+    };
+
+    const eliminarContraseñaAPI = (passwordId: number) => {
+        Alert.alert(
+            "Eliminar Contraseña",
+            "¿Estás seguro de que deseas eliminar esta contraseña de forma permanente?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                { 
+                    text: "Eliminar", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/api/passwords/${passwordId}/user/${userId}`, {
+                                method: 'DELETE',
+                            });
+
+                            if (response.ok) {
+                                setListaContraseñas((prev) => prev.filter(item => item.id !== passwordId));
+                                Alert.alert("Éxito", "Contraseña eliminada correctamente.");
+                            } else {
+                                Alert.alert("Error", "No se pudo eliminar la contraseña en el servidor.");
+                            }
+                        } catch (error) {
+                            console.error("Error al eliminar:", error);
+                            Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
@@ -244,18 +281,28 @@ export default function Contraseñas() {
                                 return (
                                     <View key={item.id} style={[styles.card, { backgroundColor: colors.cardBg }]}>
                                         <View style={styles.cardHeader}>
-                                            <View>
+                                            <View style={{ flex: 1, marginRight: 8 }}>
                                                 <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
                                                     {item.nombre}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
-                                                    - {item.usuarioCuenta}
+                                                    {item.usuarioCuenta}
                                                 </Text>
                                             </View>
-                                            <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
-                                                <Text style={[styles.badgeTexto, { color: colors.badgeText }]}>
-                                                    {item.categoria}
-                                                </Text>
+
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
+                                                    <Text style={[styles.badgeTexto, { color: colors.badgeText }]}>
+                                                        {item.categoria}
+                                                    </Text>
+                                                </View>
+
+                                                <Pressable 
+                                                    onPress={() => eliminarContraseñaAPI(item.id)} 
+                                                    style={styles.deleteBtn}
+                                                >
+                                                    <Ionicons name="trash-outline" size={18.5} color="#ef4444" />
+                                                </Pressable>
                                             </View>
                                         </View>
 
@@ -263,13 +310,25 @@ export default function Contraseñas() {
                                             <Text style={[styles.claveTexto, { color: colors.claveText }]}>
                                                 {esVisible ? item.password : '••••••••••••'}
                                             </Text>
-                                            <Pressable onPress={() => toggleVisibilidad(item.id)} style={styles.ojoBtn}>
-                                                <Ionicons 
-                                                    name={esVisible ? "eye-off-outline" : "eye-outline"} 
-                                                    size={20} 
-                                                    color={isDark ? "#6b7280" : "#9ca3af"} 
-                                                />
-                                            </Pressable>
+
+                                            {/* ACCIONES: COPIAR CONTRASEÑA + VER/OCULTAR */}
+                                            <View style={styles.accionesClave}>
+                                                <Pressable onPress={() => copiarAlPortapapeles(item.password)} style={styles.accionBtn}>
+                                                    <Ionicons 
+                                                        name="copy-outline" 
+                                                        size={19} 
+                                                        color={isDark ? "#6b7280" : "#9ca3af"} 
+                                                    />
+                                                </Pressable>
+
+                                                <Pressable onPress={() => toggleVisibilidad(item.id)} style={styles.accionBtn}>
+                                                    <Ionicons 
+                                                        name={esVisible ? "eye-off-outline" : "eye-outline"} 
+                                                        size={20} 
+                                                        color={isDark ? "#6b7280" : "#9ca3af"} 
+                                                    />
+                                                </Pressable>
+                                            </View>
                                         </View>
                                     </View>
                                 );
@@ -365,6 +424,7 @@ export default function Contraseñas() {
         </SafeAreaView>
     );
 }
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -462,6 +522,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+  deleteBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   claveContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -474,8 +539,14 @@ const styles = StyleSheet.create({
   claveTexto: {
     fontSize: 14,
     fontFamily: 'monospace',
+    flex: 1,
   },
-  ojoBtn: {
+  accionesClave: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  accionBtn: {
     padding: 2,
   },
   modalBg: {

@@ -23,6 +23,9 @@ public class User {
     @Column(nullable = false)
     private String password; // Contraseña hasheada
 
+    @Column(name = "biometric_enabled")
+    private Boolean biometricEnabled = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Password> passwords;
 
