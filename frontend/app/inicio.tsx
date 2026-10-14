@@ -3,22 +3,31 @@ import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter, Link, useLocalSearchParams } from 'expo-router'; // 1. IMPORTAR useLocalSearchParams
+import { useRouter, Link, useLocalSearchParams } from 'expo-router';
+
+interface Credencial {
+    id: number;
+    nombre: string;
+    usuarioCuenta: string;
+    password: string;
+    categoria: string;
+}
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Inicio() {
     const { width } = useWindowDimensions();
     const router = useRouter();
 
-    // 2. CAPTURAR EL userId QUE VIENE DESDE EL LOGIN
     const { userId } = useLocalSearchParams();
 
-    // Estado para controlar si está en modo oscuro (true) o claro (false)
+    const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
+    const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
+
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // Generamos los estilos pasando el ancho y el estado del modo oscuro
     const styles = Styles(width, isDarkMode);
 
-    // Opacidad modo oscuro
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -29,16 +38,40 @@ export default function Inicio() {
         }).start();
     }, [isDarkMode]);
 
+    useEffect(() => {
+        const obtenerUltimasContraseñas = async () => {
+            if (!userId) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (response.ok) {
+                    const data: Credencial[] = await response.json();
+                    const ordenadas = data.sort((a, b) => b.id - a.id).slice(0, 3);
+                    setUltimasContraseñas(ordenadas);
+                }
+            } catch (error) {
+                console.error("Error al cargar contraseñas en inicio:", error);
+            }
+        };
+
+        obtenerUltimasContraseñas();
+    }, [userId]);
+
+    const toggleVisibilidad = (id: number) => {
+        setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
+    };
+
     return (
         <View style={styles.Wrapper}>
-            {/* Fondo Claro */}
             <ImageBackground 
                 source={require('../assets/images/FondoLima.png')} 
                 style={[StyleSheet.absoluteFill, { flex: 1 }]}
                 resizeMode="cover"
             />
 
-            {/* Fondo Oscuro */}
             <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
                 <ImageBackground 
                     source={require('../assets/images/FondoLimaOscuro.png')} 
@@ -51,7 +84,6 @@ export default function Inicio() {
 
             <SafeAreaView style={styles.Body} edges={['top', 'left', 'right']}>
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    {/* Caja de Modos */}
                     <View style={styles.ModosContainer}>
                         <Pressable 
                             style={styles.Modos} 
@@ -74,7 +106,6 @@ export default function Inicio() {
                     </View>
 
                     <View style={styles.Seccion}>
-                        {/* 3. REENVIAR EL userId EN LOS PARÁMETROS A LA PANTALLA DE CONTRASEÑAS */}
                         <Link 
                             href={{
                                 pathname: "/contrasenas",
@@ -95,10 +126,60 @@ export default function Inicio() {
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.contenedorScroll}
                             >
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                                {ultimasContraseñas.length === 0 ? (
+                                    <View style={styles.cardVacia}>
+                                        <Text style={styles.textoVacio}>Sin registros recientes</Text>
+                                    </View>
+                                ) : (
+                                    ultimasContraseñas.map((item) => {
+                                        const esVisible = visibles[item.id];
+                                        return (
+                                            <Pressable 
+                                                key={item.id} 
+                                                style={styles.card}
+                                                onPress={() => router.push({
+                                                    pathname: "/contrasenas",
+                                                    params: { userId: userId }
+                                                })}
+                                            >
+                                                <View style={styles.cardHeader}>
+                                                    <View style={{ flex: 1, marginRight: 6 }}>
+                                                        <Text style={styles.nombreTexto} numberOfLines={1}>
+                                                            {item.nombre}
+                                                        </Text>
+                                                        <Text style={styles.usuarioTexto} numberOfLines={1}>
+                                                            {item.usuarioCuenta}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.badgeCategoria}>
+                                                        <Text style={styles.badgeTexto} numberOfLines={1}>
+                                                            {item.categoria}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+
+                                                <View style={styles.claveContainer}>
+                                                    <Text style={styles.claveTexto}>
+                                                        {esVisible ? item.password : '••••••••••••'}
+                                                    </Text>
+                                                    <Pressable 
+                                                        onPress={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleVisibilidad(item.id);
+                                                        }} 
+                                                        style={styles.ojoBtn}
+                                                    >
+                                                        <Ionicons 
+                                                            name={esVisible ? "eye-off-outline" : "eye-outline"} 
+                                                            size={16} 
+                                                            color={isDarkMode ? "#9ca3af" : "#4b5563"} 
+                                                        />
+                                                    </Pressable>
+                                                </View>
+                                            </Pressable>
+                                        );
+                                    })
+                                )}
                             </ScrollView>
                         </View>
 
@@ -113,10 +194,9 @@ export default function Inicio() {
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.contenedorScroll}
                             >
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 1</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 2</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 3</Text></View>
                             </ScrollView>
                         </View>
 
@@ -128,13 +208,12 @@ export default function Inicio() {
                             <ScrollView
                                 horizontal={true}
                                 style={styles.scrollView}
-                                showsHorizontalScrollIndicator={true}
+                                showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.contenedorScroll}
                             >
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 1</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 2</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 3</Text></View>
-                                <View style={styles.card}><Text style={styles.texto}>Elemento 4</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 1</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 2</Text></View>
+                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 3</Text></View>
                             </ScrollView>
                         </View>
                     </View>
@@ -175,44 +254,6 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         shadowRadius: 4,
         elevation: 4,
     },
-    barraFlotanteContainer: {
-        position: 'absolute',
-        bottom: 15,
-        left: 20,
-        right: 20,
-        height: 70,
-        backgroundColor: isDarkMode ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 35,
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 10,
-        zIndex: 999,
-    },
-    botonSecundario: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: '#00b4d8',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    botonPrincipal: {
-        width: 65,
-        height: 65,
-        borderRadius: 32.5,
-        backgroundColor: '#52b788',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 12,
-        borderWidth: 3,
-        borderColor: isDarkMode ? '#121212' : '#fff',
-    },
     LogoContainer: {
         alignItems: "center",
         justifyContent: "center",
@@ -251,19 +292,83 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         borderRadius: 10,
         padding: 10,
         marginBottom: 10,
-        height: width * 0.3,
-        width: width * 0.8,
+        height: 135,
+        width: width * 0.9,
         alignSelf: "center",
-        alignItems: "flex-start",
+        justifyContent: 'center',
     },
     scrollView: {
         width: '100%',
     },
     contenedorScroll: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 5,
         alignItems: 'center',
     },
     card: {
+        width: width * 0.65,
+        backgroundColor: isDarkMode ? '#ffffff' : '#4f46e5',
+        borderRadius: 10,
+        padding: 10,
+        marginRight: 12,
+        justifyContent: 'space-between',
+        elevation: 3,
+    },
+    cardVacia: {
+        width: width * 0.75,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    textoVacio: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 6,
+    },
+    nombreTexto: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: isDarkMode ? '#111827' : '#ffffff',
+    },
+    usuarioTexto: {
+        fontSize: 12,
+        color: isDarkMode ? '#6b7280' : '#a1a1aa',
+    },
+    badgeCategoria: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+        backgroundColor: isDarkMode ? '#f3f4f6' : '#333333',
+    },
+    badgeTexto: {
+        fontSize: 9,
+        fontWeight: '500',
+        color: isDarkMode ? '#4b5563' : '#d1d5db',
+    },
+    claveContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderWidth: 1,
+        backgroundColor: isDarkMode ? '#f9fafb' : '#2a2a2a',
+        borderColor: isDarkMode ? '#ccc' : '#333',
+    },
+    claveTexto: {
+        fontSize: 13,
+        fontFamily: 'monospace',
+        color: isDarkMode ? '#374151' : '#f3f4f6',
+    },
+    ojoBtn: {
+        padding: 2,
+    },
+    // Estilos para las otras secciones genéricas (Agenda/Gastos)
+    cardGenerica: {
         width: width * 0.4,
         height: width * 0.2,
         backgroundColor: '#4f46e5',
@@ -272,7 +377,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
-    texto: { 
+    textoGenerico: { 
         color: '#fff', 
         fontWeight: 'bold' 
     },
