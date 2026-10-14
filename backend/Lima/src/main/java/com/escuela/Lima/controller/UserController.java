@@ -39,7 +39,17 @@ public class UserController {
     // Endpoint de Login básico (sin JWT)
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginRequest) {
-        Optional<User> userOpt = userService.findByUsername(loginRequest.getUsername());
+        System.out.println("Intentando login para usuario: " + loginRequest.getUsername());
+    System.out.println("Password recibida: " + loginRequest.getPassword());
+
+    Optional<User> userOpt = userService.findByUsername(loginRequest.getUsername());
+    if (userOpt.isPresent()) {
+        System.out.println("¡Usuario encontrado en la BD!");
+        // ... validación de password
+    } else {
+        System.out.println("El usuario NO existe en la BD.");
+    }
+
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
