@@ -50,8 +50,6 @@ public class PasswordService {
         passwordExistente.setPassword(passwordDetails.getPassword());
         passwordExistente.setNombre(passwordDetails.getNombre());
         passwordExistente.setCategoria(passwordDetails.getCategoria());
-        passwordExistente.setUrl(passwordDetails.getUrl());
-        passwordExistente.setNotas(passwordDetails.getNotas());
 
         // Guardamos los cambios. El @PreUpdate de tu entidad actualizará la fecha sola.
         return passwordItemRepository.save(passwordExistente);

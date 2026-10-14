@@ -21,8 +21,8 @@ public class Password {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
-    private String titulo;
+    @Column(nullable = false, length = 100)
+    private String nombre;
 
     @Column(nullable = false, length = 150)
     private String usuarioCuenta;
@@ -30,19 +30,10 @@ public class Password {
     @Column(name = "password", nullable = false, length = 500)
     private String password;
 
-    @Column(nullable = false, length = 100)
-    private String nombre;
-
     @Column(length = 100)
     private String categoria;
 
-    @Column(length = 255)
-    private String url;
-
-    @Column(length = 500)
-    private String notas;
-
-    // Dueño de la contraseña (mantiene la relación intacta con el usuario logueado)
+    // Dueño de la contraseña
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
