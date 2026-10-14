@@ -22,6 +22,9 @@ public class Password {
     private Long id;
 
     @Column(nullable = false, length = 150)
+    private String titulo;
+
+    @Column(nullable = false, length = 150)
     private String usuarioCuenta;
 
     @Column(name = "password", nullable = false, length = 500)
@@ -39,8 +42,7 @@ public class Password {
     @Column(length = 500)
     private String notas;
 
-    // Dueño de la contraseña. Opcional por ahora (nullable),
-    // así se pueden crear y borrar contraseñas sin usuario.
+    // Dueño de la contraseña (mantiene la relación intacta con el usuario logueado)
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
