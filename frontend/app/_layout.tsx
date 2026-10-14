@@ -14,7 +14,7 @@ export default () => {
                 <Slot />
             </ScrollView>
 
-            {/* Barra flotante, fuera del ScrollView, siempre montada y visible */}
+            {/* Barra flotante, fuera del ScrollView, siempre montada y visible
             <View style={[styles.barraFlotanteContainer, { bottom: insets.bottom + 15 }]}>
                 <Pressable style={styles.botonSecundario} onPress={() => console.log("Izquierda")}>
                     <Ionicons name="person-outline" size={24} color="#fff" />
@@ -27,7 +27,7 @@ export default () => {
                 <Pressable style={styles.botonSecundario} onPress={() => console.log("Derecha")}>
                     <Ionicons name="settings-outline" size={24} color="#fff" />
                 </Pressable>
-            </View>
+            </View> */}
         </View>
     );
 };
