@@ -183,7 +183,13 @@ export default function Inicio() {
                             </ScrollView>
                         </View>
 
-                        <Pressable style={styles.Gestor}>
+                        <Pressable 
+                            style={styles.Gestor} 
+                            onPress={() => router.push({
+                                pathname: '../agenda',
+                                params: { userId: userId }
+                            })}
+                        >
                             <Text style={styles.gestorTexto}>Agenda</Text>
                         </Pressable>
 
