@@ -21,7 +21,7 @@ public class UserService {
     // Registrar un nuevo usuario con contraseña hasheada
     public User registerUser(User user) {
         // Verificar si el nombre de usuario ya existe
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
+        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
             throw new RuntimeException("El nombre de usuario ya está en uso.");
         }
@@ -34,8 +34,8 @@ public class UserService {
     }
 
     // Buscar usuario por nombre de usuario (utilizado en el login)
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     // Verificar si la contraseña ingresada coincide con la de la base de datos

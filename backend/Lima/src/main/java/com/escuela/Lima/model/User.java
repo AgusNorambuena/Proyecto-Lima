@@ -18,16 +18,13 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String username;
-
-    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
-    private String phone;
-
-    @Column(nullable = false)
     private String password; // Contraseña hasheada
+
+    @Column(name = "biometric_enabled")
+    private Boolean biometricEnabled = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Password> passwords;
