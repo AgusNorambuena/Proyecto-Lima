@@ -19,6 +19,7 @@ import MenuContraseñas from './components/menuContasenas';
 
 interface Credencial {
   id: number;          
+  titulo: string;
   nombre: string;
   usuarioCuenta: string; 
   password: string;      
@@ -38,6 +39,7 @@ export default function Contraseñas() {
     const [cargando, setCargando] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [nuevoTitulo, setNuevoTitulo] = useState('');
     const [nuevoNombre, setNuevoNombre] = useState('');
     const [nuevoUsuario, setNuevoUsuario] = useState('');
     const [nuevaClave, setNuevaClave] = useState('');
@@ -73,7 +75,7 @@ export default function Contraseñas() {
         if (!userId) return;
         try {
             setCargando(true);
-            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -105,12 +107,13 @@ export default function Contraseñas() {
     };
 
     const guardarNuevaContraseña = async () => {
-        if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
+        if (!nuevoTitulo.trim() || !nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
             Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
             return;
         }
 
         const objetoEnviar = {
+            titulo: nuevoTitulo,
             nombre: nuevoNombre,
             usuarioCuenta: nuevoUsuario,
             password: nuevaClave,
@@ -119,7 +122,7 @@ export default function Contraseñas() {
 
         try {
             setCargando(true);
-            const response = await fetch(`${API_BASE_URL}/passwords/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -135,6 +138,7 @@ export default function Contraseñas() {
 
             setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
 
+            setNuevoTitulo('');
             setNuevoNombre('');
             setNuevoUsuario('');
             setNuevaClave('');
@@ -151,10 +155,12 @@ export default function Contraseñas() {
     };
 
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
+        const tituloVal = item.titulo || '';
         const nombreVal = item.nombre || '';
         const usuarioVal = item.usuarioCuenta || '';
 
         const coincideTexto = 
+            tituloVal.toLowerCase().includes(texto.toLowerCase()) ||
             nombreVal.toLowerCase().includes(texto.toLowerCase()) ||
             usuarioVal.toLowerCase().includes(texto.toLowerCase());
 
@@ -246,10 +252,10 @@ export default function Contraseñas() {
                                         <View style={styles.cardHeader}>
                                             <View>
                                                 <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
-                                                    {item.nombre}
+                                                    {item.titulo}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
-                                                    - {item.usuarioCuenta}
+                                                    {item.nombre} - {item.usuarioCuenta}
                                                 </Text>
                                             </View>
                                             <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
@@ -289,6 +295,15 @@ export default function Contraseñas() {
                                 <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
                                     Nueva Contraseña
                                 </Text>
+
+                                <Text style={styles.label}>Título:</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
+                                    placeholder="Ej: Correo Personal, Redes..."
+                                    placeholderTextColor="#888"
+                                    value={nuevoTitulo}
+                                    onChangeText={setNuevoTitulo}
+                                />
 
                                 <Text style={styles.label}>Aplicación / Servicio:</Text>
                                 <TextInput
@@ -365,6 +380,7 @@ export default function Contraseñas() {
         </SafeAreaView>
     );
 }
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
