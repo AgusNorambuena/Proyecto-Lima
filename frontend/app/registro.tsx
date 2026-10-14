@@ -15,7 +15,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     // Validaciones básicas de campos vacíos
-    if (!username.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Campos incompletos', 'Por favor completa todos los campos.');
       return;
     }
@@ -30,9 +30,7 @@ export default function RegisterScreen() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: username.trim(),
           email: email.trim(),
-          phone: phone.trim(),
           password: password.trim(),
         }),
       });
@@ -73,30 +71,12 @@ export default function RegisterScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Nombre de usuario"
-          placeholderTextColor="#888"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
           placeholder="Correo electrónico"
           placeholderTextColor="#888"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Teléfono"
-          placeholderTextColor="#888"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
         />
 
         <TextInput
