@@ -8,7 +8,6 @@ import {
   useColorScheme,
   ImageBackground,
   Modal,
-  Alert,
   ActivityIndicator,
   Clipboard,
   StyleSheet
@@ -17,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import MenuContraseñas from './components/menuContasenas';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 
 interface Credencial {
   id: number;          
@@ -30,6 +30,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Contraseñas() {
     const { userId } = useLocalSearchParams();
+    const { popup, showPopup, dismissPopup } = useAppPopup();
 
     const [texto, setTexto] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
@@ -91,7 +92,7 @@ export default function Contraseñas() {
             setListaContraseñas(data);
         } catch (error) {
             console.error(error);
-            Alert.alert('Error de conexión', 'No se pudo conectar con la API para cargar las contraseñas.');
+            showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con la API para cargar las contraseñas.', tone: 'error' });
         } finally {
             setCargando(false);
         }
@@ -112,7 +113,7 @@ export default function Contraseñas() {
 
     const guardarNuevaContraseña = async () => {
         if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
-            Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
+            showPopup({ title: 'Campos incompletos', message: 'Por favor completa todos los campos requeridos.', tone: 'info' });
             return;
         }
 
@@ -147,24 +148,25 @@ export default function Contraseñas() {
             setNuevaCategoria('Contraseñas Personales');
             setModalVisible(false);
 
-            Alert.alert('Éxito', 'Contraseña guardada correctamente.');
+            showPopup({ title: 'Éxito', message: 'Contraseña guardada correctamente.', tone: 'success' });
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'No se pudo guardar la contraseña en la base de datos.');
+            showPopup({ title: 'Error', message: 'No se pudo guardar la contraseña en la base de datos.', tone: 'error' });
         } finally {
             setCargando(false);
         }
     };
 
     const eliminarContraseñaAPI = (passwordId: number) => {
-        Alert.alert(
-            "Eliminar Contraseña",
-            "¿Estás seguro de que deseas eliminar esta contraseña de forma permanente?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                { 
-                    text: "Eliminar", 
-                    style: "destructive",
+        showPopup({
+            title: 'Eliminar Contraseña',
+            message: '¿Estás seguro de que deseas eliminar esta contraseña de forma permanente?',
+            tone: 'confirm',
+            actions: [
+                { label: 'Cancelar', variant: 'secondary', onPress: dismissPopup },
+                {
+                    label: 'Eliminar',
+                    variant: 'danger',
                     onPress: async () => {
                         try {
                             const response = await fetch(`${API_BASE_URL}/api/passwords/${passwordId}/user/${userId}`, {
@@ -173,18 +175,18 @@ export default function Contraseñas() {
 
                             if (response.ok) {
                                 setListaContraseñas((prev) => prev.filter(item => item.id !== passwordId));
-                                Alert.alert("Éxito", "Contraseña eliminada correctamente.");
+                                showPopup({ title: 'Éxito', message: 'Contraseña eliminada correctamente.', tone: 'success' });
                             } else {
-                                Alert.alert("Error", "No se pudo eliminar la contraseña en el servidor.");
+                                showPopup({ title: 'Error', message: 'No se pudo eliminar la contraseña en el servidor.', tone: 'error' });
                             }
                         } catch (error) {
                             console.error("Error al eliminar:", error);
-                            Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+                            showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con el servidor.', tone: 'error' });
                         }
                     }
                 }
-            ]
-        );
+            ],
+        });
     };
 
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
@@ -421,6 +423,7 @@ export default function Contraseñas() {
 
                 </ScrollView>
             </ImageBackground>
+            <AppPopup popup={popup} onDismiss={dismissPopup} />
         </SafeAreaView>
     );
 }

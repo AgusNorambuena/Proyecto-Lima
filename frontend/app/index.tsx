@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { popup, showPopup, dismissPopup } = useAppPopup();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
+
+  const navegarAInicio = (userId: number | string) => {
+    router.replace({ pathname: '/inicio', params: { userId: String(userId) } });
+  };
 
   useEffect(() => {
     // Verificar si el dispositivo soporta biometría y si hay credenciales guardadas
@@ -46,42 +52,51 @@ export default function LoginScreen() {
         const user = await response.json(); 
 
         if (guardarParaBiometria) {
-          // Preguntar si desea activar acceso biométrico para futuras ocasiones
-          Alert.alert(
-            "Huella Digital",
-            "¿Deseas activar el inicio de sesión por huella digital para la próxima vez?",
-            [
-              { text: "No", style: "cancel" },
-              { 
-                text: "Sí, activar", 
+          showPopup({
+            title: 'Huella Digital',
+            message: '¿Deseas activar el inicio de sesión por huella digital para la próxima vez?',
+            tone: 'confirm',
+            actions: [
+              { label: 'No', variant: 'secondary', onPress: () => navegarAInicio(user.id) },
+              {
+                label: 'Sí, activar',
+                variant: 'primary',
                 onPress: async () => {
-                  await SecureStore.setItemAsync('user_email', emailLogin.trim());
-                  await SecureStore.setItemAsync('user_password', passwordLogin.trim());
-                  setHasStoredCredentials(true);
-                }
-              }
-            ]
-          );
+                  try {
+                    await SecureStore.setItemAsync('user_email', emailLogin.trim());
+                    await SecureStore.setItemAsync('user_password', passwordLogin.trim());
+                    setHasStoredCredentials(true);
+                    navegarAInicio(user.id);
+                  } catch (error) {
+                    console.error('Error al guardar credenciales biométricas:', error);
+                    showPopup({
+                      title: 'Error',
+                      message: 'No se pudo guardar el acceso biométrico.',
+                      tone: 'error',
+                      actions: [{ label: 'Continuar', onPress: () => navegarAInicio(user.id) }],
+                    });
+                  }
+                },
+              },
+            ],
+          });
+          return;
         }
         
-        // Navegamos a inicio y pasamos el userId
-        router.replace({
-          pathname: '/inicio',
-          params: { userId: user.id }
-        });
+        navegarAInicio(user.id);
         
       } else {
-        Alert.alert("Error", "Credenciales incorrectas.");
+        showPopup({ title: 'Error', message: 'Credenciales incorrectas.', tone: 'error' });
       }
     } catch (error) {
       console.error("Error en el login:", error);
-      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+      showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con el servidor.', tone: 'error' });
     }
   };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Por favor ingresa tu correo electrónico y contraseña.");
+      showPopup({ title: 'Error', message: 'Por favor ingresa tu correo electrónico y contraseña.', tone: 'info' });
       return;
     }
     await ejecutarLoginEnAPI(email, password, true);
@@ -92,7 +107,7 @@ export default function LoginScreen() {
     try {
       const enrolled = await LocalAuthentication.isEnrolledAsync();
       if (!enrolled) {
-        Alert.alert("Aviso", "No hay huellas registradas en este dispositivo.");
+        showPopup({ title: 'Aviso', message: 'No hay huellas registradas en este dispositivo.', tone: 'info' });
         return;
       }
 
@@ -108,12 +123,12 @@ export default function LoginScreen() {
         if (savedEmail && savedPass) {
           await ejecutarLoginEnAPI(savedEmail, savedPass, false);
         } else {
-          Alert.alert("Aviso", "Inicia sesión con correo y contraseña al menos una vez para activar la huella.");
+          showPopup({ title: 'Aviso', message: 'Inicia sesión con correo y contraseña al menos una vez para activar la huella.', tone: 'info' });
         }
       }
     } catch (error) {
       console.error("Error biométrico:", error);
-      Alert.alert("Error", "No se pudo completar la autenticación biométrica.");
+      showPopup({ title: 'Error', message: 'No se pudo completar la autenticación biométrica.', tone: 'error' });
     }
   };
 
@@ -160,6 +175,7 @@ export default function LoginScreen() {
           <Text style={styles.secondaryButtonText}>Crear una cuenta nueva</Text>
         </TouchableOpacity>
       </View>
+      <AppPopup popup={popup} onDismiss={dismissPopup} />
     </ImageBackground>
   );
 }

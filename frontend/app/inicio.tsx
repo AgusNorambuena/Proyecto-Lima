@@ -4,6 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, Link, useLocalSearchParams } from 'expo-router';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
+
+// Configuración opcional en español para el calendario
+LocaleConfig.locales['es'] = {
+  monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+  monthNamesShort: ['Ene.', 'Feb.', 'Mar.', 'Abr.', 'May.', 'Jun.', 'Jul.', 'Ago.', 'Sep.', 'Oct.', 'Nov.', 'Dic.'],
+  dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+  dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+  today: 'Hoy'
+};
+LocaleConfig.defaultLocale = 'es';
 
 interface Credencial {
     id: number;
@@ -23,6 +34,7 @@ export default function Inicio() {
 
     const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
     const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
+    const [selectedDate, setSelectedDate] = useState('');
 
     const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -183,38 +195,50 @@ export default function Inicio() {
                             </ScrollView>
                         </View>
 
-                        <Pressable style={styles.Gestor}>
+                        {/* SECCIÓN AGENDA */}
+                        <Pressable 
+                            style={styles.Gestor} 
+                            onPress={() => router.push({
+                                pathname: '../agenda',
+                                params: { userId: userId }
+                            })}
+                        >
                             <Text style={styles.gestorTexto}>Agenda</Text>
                         </Pressable>
 
-                        <View style={styles.Contenido}>
-                            <ScrollView
-                                horizontal
-                                style={styles.scrollView}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.contenedorScroll}
-                            >
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 1</Text></View>
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 2</Text></View>
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 3</Text></View>
-                            </ScrollView>
-                        </View>
-
-                        <Pressable style={styles.Gestor}>
-                            <Text style={styles.gestorTexto}>Gastos</Text>
-                        </Pressable>
-
-                        <View style={styles.Contenido}>
-                            <ScrollView
-                                horizontal={true}
-                                style={styles.scrollView}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.contenedorScroll}
-                            >
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 1</Text></View>
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 2</Text></View>
-                                <View style={styles.cardGenerica}><Text style={styles.textoGenerico}>Elemento 3</Text></View>
-                            </ScrollView>
+                        {/* CONTENEDOR DEL CALENDARIO INTEGRADO */}
+                        <View style={styles.ContenidoCalendario}>
+                            <Calendar
+                                onDayPress={(day) => {
+                                    setSelectedDate(day.dateString);
+                                    router.push({
+                                        pathname: '../agenda',
+                                        params: { userId: userId, fecha: day.dateString }
+                                    });
+                                }}
+                                markedDates={{
+                                    [selectedDate]: { selected: true, selectedColor: '#4f46e5' }
+                                }}
+                                theme={{
+                                    backgroundColor: 'transparent',
+                                    calendarBackground: 'transparent',
+                                    textSectionTitleColor: isDarkMode ? '#a1a1aa' : '#374151',
+                                    selectedDayBackgroundColor: '#4f46e5',
+                                    selectedDayTextColor: '#ffffff',
+                                    todayTextColor: 'hsl(83, 69%, 48%)',
+                                    dayTextColor: isDarkMode ? '#ffffff' : '#111827',
+                                    textDisabledColor: isDarkMode ? '#4b5563' : '#d1d5db',
+                                    arrowColor: isDarkMode ? 'hsl(83, 69%, 48%)' : '#4f46e5',
+                                    monthTextColor: isDarkMode ? '#ffffff' : '#111827',
+                                    indicatorColor: '#4f46e5',
+                                    textDayFontWeight: '500',
+                                    textMonthFontWeight: 'bold',
+                                    textDayHeaderFontWeight: '600',
+                                    textDayFontSize: 13,
+                                    textMonthFontSize: 15,
+                                    textDayHeaderFontSize: 11,
+                                }}
+                            />
                         </View>
                     </View>
                 </ScrollView>
@@ -297,6 +321,20 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         alignSelf: "center",
         justifyContent: 'center',
     },
+    // Estilo adaptado especialmente para el contenedor del Calendario
+    ContenidoCalendario: {
+        backgroundColor: isDarkMode ? '#1e1e1e' : 'rgba(255, 255, 255, 0.85)',
+        borderRadius: 12,
+        padding: 8,
+        marginBottom: 15,
+        width: width * 0.9,
+        alignSelf: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 3,
+    },
     scrollView: {
         width: '100%',
     },
@@ -367,7 +405,6 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     ojoBtn: {
         padding: 2,
     },
-    // Estilos para las otras secciones genéricas (Agenda/Gastos)
     cardGenerica: {
         width: width * 0.4,
         height: width * 0.2,
