@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AppPopup, { useAppPopup } from './components/AppPopup';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface Evento {
   id: number;
@@ -31,7 +32,10 @@ export default function AgendaScreen() {
     const { userId, fecha } = useLocalSearchParams();
     const { popup, showPopup, dismissPopup } = useAppPopup();
 
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const { isDarkMode } = useTheme();
+    const colors = isDarkMode
+        ? { text: '#f8fafc', muted: '#cbd5e1', surface: '#17212b', input: '#1f2937', border: '#475569' }
+        : { text: '#17211a', muted: '#475569', surface: 'rgba(255, 255, 255, 0.92)', input: 'rgba(50, 80, 180, 0.75)', border: 'rgba(255, 255, 255, 0.55)' };
     const [nuevoEvento, setNuevoEvento] = useState('');
     const [fechaSeleccionada, setFechaSeleccionada] = useState(
         typeof fecha === 'string' ? fecha : new Date().toISOString().split('T')[0]
@@ -101,7 +105,7 @@ export default function AgendaScreen() {
     return (
         <View style={styles.wrapper}>
             <ImageBackground 
-                source={require('../assets/images/FondoLima.png')} 
+                source={isDarkMode ? require('../assets/images/FondoLimaOscuro.png') : require('../assets/images/FondoLima.png')}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
             />
@@ -113,16 +117,7 @@ export default function AgendaScreen() {
                     
                     {/* Botón Modo Oscuro / Claro */}
                     <View style={styles.modosContainer}>
-                        <Pressable 
-                            style={styles.modosBtn} 
-                            onPress={() => setIsDarkMode(!isDarkMode)}
-                        >
-                            <Ionicons 
-                                name={isDarkMode ? "sunny" : "moon"} 
-                                size={22} 
-                                color="#fff" 
-                            />
-                        </Pressable>
+                        <ThemeToggle />
                     </View>
 
                     {/* Logo de la aplicación */}
@@ -140,24 +135,24 @@ export default function AgendaScreen() {
                     </View>
 
                     {/* Contenedor Principal (Tarjeta del Mes) */}
-                    <View style={styles.encuadreMes}>
-                        <Text style={styles.mesTitulo}>
+                    <View style={[styles.encuadreMes, { backgroundColor: colors.surface, borderColor: isDarkMode ? '#475569' : colors.border }]}>
+                        <Text style={[styles.mesTitulo, { color: colors.text }]}>
                             {fecha ? `EVENTOS (${fecha})` : 'MES'}
                         </Text>
 
                         {listaEventos.length > 0 ? (
                             <View style={{ width: '100%', marginBottom: 15 }}>
                                 {listaEventos.slice(0, 4).map((ev) => (
-                                    <View key={ev.id} style={styles.eventoItemCard}>
-                                        <Text style={styles.eventoItemTexto} numberOfLines={1}>• {ev.titulo}</Text>
-                                        <Text style={styles.eventoItemFecha}>{ev.fecha}</Text>
+                                    <View key={ev.id} style={[styles.eventoItemCard, { backgroundColor: isDarkMode ? '#263449' : 'rgba(180, 240, 180, 0.9)' }]}>
+                                        <Text style={[styles.eventoItemTexto, { color: colors.text }]} numberOfLines={1}>• {ev.titulo}</Text>
+                                        <Text style={[styles.eventoItemFecha, { color: colors.muted }]}>{ev.fecha}</Text>
                                     </View>
                                 ))}
                             </View>
                         ) : (
                             <View style={styles.gridContainer}>
                                 {diasMesGrid.map((item) => (
-                                    <View key={item} style={styles.gridCard} />
+                                    <View key={item} style={[styles.gridCard, { backgroundColor: isDarkMode ? '#263449' : 'rgba(180, 240, 180, 0.85)', borderColor: isDarkMode ? '#475569' : colors.border }]} />
                                 ))}
                             </View>
                         )}
@@ -165,10 +160,10 @@ export default function AgendaScreen() {
 
                     {/* Formulario para Añadir Evento */}
                     <View style={styles.inputSection}>
-                        <Text style={styles.labelEvento}>AÑADIR EVENTO:</Text>
+                        <Text style={[styles.labelEvento, { color: colors.text }]}>AÑADIR EVENTO:</Text>
                         
                         <TextInput
-                            style={[styles.inputEvento, { marginBottom: 10 }]}
+                            style={[styles.inputEvento, { marginBottom: 10, backgroundColor: colors.input, borderColor: colors.border }]}
                             placeholder="Fecha (YYYY-MM-DD)..."
                             placeholderTextColor="rgba(255, 255, 255, 0.7)"
                             value={fechaSeleccionada}
@@ -176,7 +171,7 @@ export default function AgendaScreen() {
                         />
 
                         <TextInput
-                            style={styles.inputEvento}
+                            style={[styles.inputEvento, { backgroundColor: colors.input, borderColor: colors.border }]}
                             placeholder="Escribe un evento..."
                             placeholderTextColor="rgba(255, 255, 255, 0.7)"
                             value={nuevoEvento}
