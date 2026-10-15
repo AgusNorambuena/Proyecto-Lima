@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface Props {
   textoBusqueda?: string;
   onSeleccionarCategoria?: (categoria: string) => void; 
+  isDarkMode?: boolean;
 }
 
-export default function MenuContraseñas({ textoBusqueda = '', onSeleccionarCategoria }: Props) {
+export default function MenuContraseñas({ textoBusqueda = '', onSeleccionarCategoria, isDarkMode = false }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
   
@@ -56,52 +57,52 @@ export default function MenuContraseñas({ textoBusqueda = '', onSeleccionarCate
   return (
     <View style={styles.container}>
       {/* Botón principal del menú */}
-      <Pressable onPress={toggleMenu} style={styles.header}>
-        <Ionicons name="folder-outline" size={20} color="#4f46e5" style={styles.folderIcon} />
-        <Text style={styles.headerText}>{categoriaSeleccionada}</Text>
+      <Pressable onPress={toggleMenu} style={[styles.header, isDarkMode && styles.headerDark]}>
+        <Ionicons name="folder-outline" size={20} color={isDarkMode ? '#c5f36b' : '#4f46e5'} style={styles.folderIcon} />
+        <Text style={[styles.headerText, isDarkMode && styles.headerTextDark]}>{categoriaSeleccionada}</Text>
         
         <Ionicons 
           name={isOpen ? "chevron-up" : "chevron-down"} 
           size={20} 
-          color="#666" 
+          color={isDarkMode ? '#cbd5e1' : '#666'}
         />
       </Pressable>
 
       {/* Contenido desplegable animado */}
       <Animated.View 
         pointerEvents={isOpen ? 'auto' : 'none'} 
-        style={[styles.dropdown, animatedStyle]}
+        style={[styles.dropdown, animatedStyle, isDarkMode && styles.dropdownDark]}
       >
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Todas las contraseñas')}
         >
-          <Ionicons name="file-tray-full-outline" size={18} color="#4b5563" style={styles.optionIcon} />
-          <Text style={styles.optionText}>Todas las contraseñas</Text>
+          <Ionicons name="file-tray-full-outline" size={18} color={isDarkMode ? '#cbd5e1' : '#4b5563'} style={styles.optionIcon} />
+          <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Todas las contraseñas</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Contraseñas Personales')}
         >
-          <Ionicons name="key-outline" size={18} color="#4b5563" style={styles.optionIcon} />
-          <Text style={styles.optionText}>Contraseñas Personales</Text>
+          <Ionicons name="key-outline" size={18} color={isDarkMode ? '#cbd5e1' : '#4b5563'} style={styles.optionIcon} />
+          <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Contraseñas Personales</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Trabajo y Servidores')}
         >
-          <Ionicons name="briefcase-outline" size={18} color="#4b5563" style={styles.optionIcon} />
-          <Text style={styles.optionText}>Trabajo y Servidores</Text>
+          <Ionicons name="briefcase-outline" size={18} color={isDarkMode ? '#cbd5e1' : '#4b5563'} style={styles.optionIcon} />
+          <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Trabajo y Servidores</Text>
         </Pressable>
 
         <Pressable 
           style={styles.option} 
           onPress={() => seleccionarOpcion('Redes Sociales')}
         >
-          <Ionicons name="globe-outline" size={18} color="#4b5563" style={styles.optionIcon} />
-          <Text style={styles.optionText}>Redes Sociales</Text>
+          <Ionicons name="globe-outline" size={18} color={isDarkMode ? '#cbd5e1' : '#4b5563'} style={styles.optionIcon} />
+          <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Redes Sociales</Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -126,6 +127,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
+  headerDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#475569',
+  },
   folderIcon: {
     marginRight: 10,
   },
@@ -134,6 +139,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
+  },
+  headerTextDark: {
+    color: '#f8fafc',
   },
   dropdown: {
     position: 'absolute',
@@ -151,6 +159,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
   },
+  dropdownDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#475569',
+  },
   option: {
     flexDirection: 'row',       
     alignItems: 'center',       
@@ -165,5 +177,8 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 15,
     color: '#4b5563',
+  },
+  optionTextDark: {
+    color: '#e2e8f0',
   },
 });

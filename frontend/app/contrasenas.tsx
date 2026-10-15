@@ -5,7 +5,6 @@ import {
   ScrollView, 
   TextInput, 
   Pressable, 
-  useColorScheme,
   ImageBackground,
   Modal,
   ActivityIndicator,
@@ -17,6 +16,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import MenuContraseñas from './components/menuContasenas';
 import AppPopup, { useAppPopup } from './components/AppPopup';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface Credencial {
   id: number;          
@@ -31,6 +32,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 export default function Contraseñas() {
     const { userId } = useLocalSearchParams();
     const { popup, showPopup, dismissPopup } = useAppPopup();
+    const { isDarkMode } = useTheme();
 
     const [texto, setTexto] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
@@ -45,30 +47,29 @@ export default function Contraseñas() {
     const [nuevaClave, setNuevaClave] = useState('');
     const [nuevaCategoria, setNuevaCategoria] = useState('Contraseñas Personales');
 
-    const colorScheme = useColorScheme(); 
-    const isDark = colorScheme === 'dark';
+        const isDark = isDarkMode;
 
     const fondoPantalla = isDark 
-      ? require('../assets/images/FondoLima.png') 
-      : require('../assets/images/FondoLimaOscuro.png');
+            ? require('../assets/images/FondoLimaOscuro.png')
+            : require('../assets/images/FondoLima.png');
 
     const fondoEncuadre = isDark 
-      ? require('../assets/images/FondoLimaOscuro.png') 
-      : require('../assets/images/FondoLima.png');
+            ? require('../assets/images/FondoLima.png')
+            : require('../assets/images/FondoLimaOscuro.png');
 
     const colors = {
-      textPrimary: isDark ? '#3f3692' : '#ffffff',
-      textSecondary: isDark ? '#272f5e' : '#4b5563',
-      searchBg: isDark ? 'rgba(30, 30, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-      searchBorder: isDark ? '#333333' : '#ccc',
-      searchText: isDark ? '#ffffff' : '#000000',
-      cardBg: isDark ? '#ffffff' : '#1e1e1e',
-      cardText: isDark ? '#111827' : '#ffffff',
-      cardSubtext: isDark ? '#6b7280' : '#a1a1aa',
-      claveBg: isDark ? '#f9fafb' : '#2a2a2a',
-      claveText: isDark ? '#374151' : '#f3f4f6',
-      badgeBg: isDark ? '#f3f4f6' : '#333333',
-      badgeText: isDark ? '#4b5563' : '#d1d5db',
+            textPrimary: isDark ? '#f8fafc' : '#17211a',
+            textSecondary: isDark ? '#cbd5e1' : '#475569',
+            searchBg: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.92)',
+            searchBorder: isDark ? '#475569' : '#cbd5e1',
+            searchText: isDark ? '#f8fafc' : '#111827',
+            cardBg: isDark ? '#1e293b' : '#ffffff',
+            cardText: isDark ? '#f8fafc' : '#111827',
+            cardSubtext: isDark ? '#cbd5e1' : '#64748b',
+            claveBg: isDark ? '#0f172a' : '#f1f5f9',
+            claveText: isDark ? '#f8fafc' : '#1f2937',
+            badgeBg: isDark ? '#334155' : '#e2e8f0',
+            badgeText: isDark ? '#e2e8f0' : '#475569',
     };
 
     const obtenerContraseñasAPI = async () => {
@@ -213,6 +214,9 @@ export default function Contraseñas() {
                     keyboardShouldPersistTaps="handled"
                     automaticallyAdjustKeyboardInsets={false}
                 >
+                    <View style={{ alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 8 }}>
+                        <ThemeToggle />
+                    </View>
                     <View style={{ padding: 20 }}>
                         <Text style={[styles.titulo, { color: colors.textPrimary }]}>
                             Contraseñas
@@ -254,7 +258,8 @@ export default function Contraseñas() {
                         />
                     </View>
                     
-                    <MenuContraseñas 
+                    <MenuContraseñas
+                        isDarkMode={isDark}
                         textoBusqueda={texto} 
                         onSeleccionarCategoria={(cat) => setCategoriaSeleccionada(cat)}
                     />
@@ -351,37 +356,37 @@ export default function Contraseñas() {
                                     Nueva Contraseña
                                 </Text>
 
-                                <Text style={styles.label}>Aplicación / Servicio:</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Aplicación / Servicio:</Text>
                                 <TextInput
                                     style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
                                     placeholder="Ej: Spotify, Facebook..."
-                                    placeholderTextColor="#888"
+                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
                                     value={nuevoNombre}
                                     onChangeText={setNuevoNombre}
                                 />
 
-                                <Text style={styles.label}>Email / Usuario:</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Email / Usuario:</Text>
                                 <TextInput
                                     style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
                                     placeholder="Ej: usuario@gmail.com"
-                                    placeholderTextColor="#888"
+                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                     value={nuevoUsuario}
                                     onChangeText={setNuevoUsuario}
                                 />
 
-                                <Text style={styles.label}>Contraseña:</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Contraseña:</Text>
                                 <TextInput
                                     style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
                                     placeholder="••••••••••••"
-                                    placeholderTextColor="#888"
+                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
                                     secureTextEntry
                                     value={nuevaClave}
                                     onChangeText={setNuevaClave}
                                 />
 
-                                <Text style={styles.label}>Categoría:</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría:</Text>
                                 <View style={styles.opcionesCategorias}>
                                     {['Contraseñas Personales', 'Trabajo y Servidores', 'Redes Sociales'].map((cat) => (
                                         <Pressable
@@ -404,10 +409,10 @@ export default function Contraseñas() {
 
                                 <View style={styles.modalAcciones}>
                                     <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: '#e5e7eb' }]} 
+                                        style={[styles.btnModal, { backgroundColor: isDark ? '#334155' : '#e5e7eb' }]}
                                         onPress={() => setModalVisible(false)}
                                     >
-                                        <Text style={{ color: '#374151', fontWeight: '600' }}>Cancelar</Text>
+                                        <Text style={{ color: isDark ? '#f8fafc' : '#374151', fontWeight: '600' }}>Cancelar</Text>
                                     </Pressable>
 
                                     <Pressable 

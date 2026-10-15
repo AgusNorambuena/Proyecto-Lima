@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTheme } from '../../theme/ThemeProvider';
 
 export type PopupTone = 'success' | 'error' | 'info' | 'confirm';
 export type PopupActionVariant = 'primary' | 'secondary' | 'danger';
@@ -41,6 +42,7 @@ const toneStyles: Record<PopupTone, { color: string; backgroundColor: string; ic
 };
 
 export default function AppPopup({ popup, onDismiss }: AppPopupProps) {
+  const { isDarkMode } = useTheme();
   if (!popup) return null;
 
   const tone = toneStyles[popup.tone ?? 'info'];
@@ -56,12 +58,12 @@ export default function AppPopup({ popup, onDismiss }: AppPopupProps) {
     <Modal transparent visible animationType="fade" onRequestClose={dismiss} statusBarTranslucent>
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Cerrar mensaje" />
-        <View style={styles.dialog} accessibilityViewIsModal>
+        <View style={[styles.dialog, isDarkMode && styles.dialogDark]} accessibilityViewIsModal>
           <View style={[styles.iconWrap, { backgroundColor: tone.backgroundColor }]}>
             <Ionicons name={tone.icon} size={30} color={tone.color} />
           </View>
-          <Text style={styles.title}>{popup.title}</Text>
-          <Text style={styles.message}>{popup.message}</Text>
+          <Text style={[styles.title, isDarkMode && styles.titleDark]}>{popup.title}</Text>
+          <Text style={[styles.message, isDarkMode && styles.messageDark]}>{popup.message}</Text>
           <View style={[styles.actions, actions.length === 1 && styles.singleAction]}>
             {actions.map((action) => {
               const variant = action.variant ?? 'primary';
@@ -124,6 +126,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.24,
     shadowRadius: 18,
   },
+  dialogDark: {
+    borderColor: '#475569',
+    backgroundColor: '#1e293b',
+  },
   iconWrap: {
     width: 58,
     height: 58,
@@ -139,6 +145,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
+  titleDark: {
+    color: '#f8fafc',
+  },
   message: {
     width: '100%',
     marginTop: 8,
@@ -146,6 +155,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
+  },
+  messageDark: {
+    color: '#cbd5e1',
   },
   actions: {
     width: '100%',

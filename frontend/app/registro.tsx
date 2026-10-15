@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import AppPopup, { useAppPopup } from './components/AppPopup';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
 
 // Tomamos la IP de tu PC configurada en el .env
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const { popup, showPopup, dismissPopup } = useAppPopup();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -62,16 +65,17 @@ export default function RegisterScreen() {
 
   return (
     <ImageBackground 
-      source={require('../assets/images/FondoLima.png')} 
+      source={isDarkMode ? require('../assets/images/FondoLimaOscuro.png') : require('../assets/images/FondoLima.png')}
       style={styles.backgroundImage}
     >
-      <View style={styles.container}>
-        <Text style={styles.title}>Nueva Cuenta</Text>
+      <ThemeToggle style={styles.themeToggle} />
+      <View style={[styles.container, { backgroundColor: isDarkMode ? 'rgba(10, 15, 24, 0.48)' : 'rgba(255, 255, 255, 0.12)' }]}>
+        <Text style={[styles.title, { color: isDarkMode ? '#f8fafc' : '#17211a' }]}>Nueva Cuenta</Text>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#111827', borderColor: isDarkMode ? '#475569' : '#ddd' }]}
           placeholder="Correo electrónico"
-          placeholderTextColor="#888"
+          placeholderTextColor={isDarkMode ? '#a8b2c1' : '#888'}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -79,9 +83,9 @@ export default function RegisterScreen() {
         />
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#111827', borderColor: isDarkMode ? '#475569' : '#ddd' }]}
           placeholder="Crea una contraseña maestra"
-          placeholderTextColor="#888"
+          placeholderTextColor={isDarkMode ? '#a8b2c1' : '#888'}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -114,6 +118,7 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  themeToggle: { position: 'absolute', top: 52, right: 20, zIndex: 2 },
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'transparent' },
   title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 40 },
   input: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },

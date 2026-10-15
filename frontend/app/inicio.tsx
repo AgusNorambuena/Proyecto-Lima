@@ -1,10 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView, ImageBackground, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter, Link, useLocalSearchParams } from 'expo-router';
+import { useRouter, Link, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
 
 // Configuración opcional en español para el calendario
 LocaleConfig.locales['es'] = {
@@ -24,6 +26,12 @@ interface Credencial {
     categoria: string;
 }
 
+interface EventoAgenda {
+    id: number;
+    titulo: string;
+    fecha: string;
+}
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Inicio() {
@@ -35,8 +43,9 @@ export default function Inicio() {
     const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
     const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
     const [selectedDate, setSelectedDate] = useState('');
+    const [eventosPorFecha, setEventosPorFecha] = useState<Record<string, string[]>>({});
 
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const { isDarkMode } = useTheme();
 
     const styles = Styles(width, isDarkMode);
 
@@ -72,6 +81,32 @@ export default function Inicio() {
         obtenerUltimasContraseñas();
     }, [userId]);
 
+    useFocusEffect(
+        useCallback(() => {
+            if (!userId) return undefined;
+            let activo = true;
+
+            const obtenerEventos = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`);
+                    if (!response.ok) throw new Error('No se pudieron cargar los eventos.');
+                    const eventos: EventoAgenda[] = await response.json();
+                    const agrupados = eventos.reduce<Record<string, string[]>>((resultado, evento) => {
+                        resultado[evento.fecha] = [...(resultado[evento.fecha] ?? []), evento.titulo];
+                        return resultado;
+                    }, {});
+
+                    if (activo) setEventosPorFecha(agrupados);
+                } catch (error) {
+                    console.error('Error al cargar eventos en inicio:', error);
+                }
+            };
+
+            void obtenerEventos();
+            return () => { activo = false; };
+        }, [userId])
+    );
+
     const toggleVisibilidad = (id: number) => {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
@@ -97,16 +132,7 @@ export default function Inicio() {
             <SafeAreaView style={styles.Body} edges={['top', 'left', 'right']}>
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.ModosContainer}>
-                        <Pressable 
-                            style={styles.Modos} 
-                            onPress={() => setIsDarkMode(!isDarkMode)}
-                        >
-                            <Ionicons 
-                                name={isDarkMode ? "sunny" : "moon"} 
-                                size={24} 
-                                color="#fff" 
-                            />
-                        </Pressable>
+                        <ThemeToggle />
                     </View>
 
                     <View style={styles.LogoContainer}>
@@ -209,6 +235,7 @@ export default function Inicio() {
                         {/* CONTENEDOR DEL CALENDARIO INTEGRADO */}
                         <View style={styles.ContenidoCalendario}>
                             <Calendar
+                                key={isDarkMode ? 'calendar-dark' : 'calendar-light'}
                                 onDayPress={(day) => {
                                     setSelectedDate(day.dateString);
                                     router.push({
@@ -219,17 +246,51 @@ export default function Inicio() {
                                 markedDates={{
                                     [selectedDate]: { selected: true, selectedColor: '#4f46e5' }
                                 }}
+                                dayComponent={({ date, state, marking, onPress }) => {
+                                    const fechaDia = date?.dateString ?? '';
+                                    const nombresEventos = eventosPorFecha[fechaDia] ?? [];
+                                    const seleccionado = Boolean(marking?.selected);
+                                    const inactivo = state === 'disabled' || state === 'inactive';
+
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`${fechaDia}${nombresEventos.length ? `: ${nombresEventos.join(', ')}` : ''}`}
+                                            onPress={() => date && onPress?.(date)}
+                                            style={styles.diaCalendario}
+                                        >
+                                            <Text style={[
+                                                styles.numeroDia,
+                                                seleccionado && styles.numeroDiaSeleccionado,
+                                                !seleccionado && inactivo && styles.numeroDiaInactivo,
+                                                !seleccionado && state === 'today' && styles.numeroDiaHoy,
+                                            ]}>
+                                                {date?.day}
+                                            </Text>
+                                            {nombresEventos.length > 0 && (
+                                                <Text
+                                                    style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    );
+                                }}
                                 theme={{
                                     backgroundColor: 'transparent',
-                                    calendarBackground: 'transparent',
-                                    textSectionTitleColor: isDarkMode ? '#a1a1aa' : '#374151',
+                                    calendarBackground: isDarkMode ? '#000000' : '#ffffff',
+                                    textSectionTitleColor: isDarkMode ? '#e2e8f0' : '#374151',
                                     selectedDayBackgroundColor: '#4f46e5',
                                     selectedDayTextColor: '#ffffff',
-                                    todayTextColor: 'hsl(83, 69%, 48%)',
-                                    dayTextColor: isDarkMode ? '#ffffff' : '#111827',
-                                    textDisabledColor: isDarkMode ? '#4b5563' : '#d1d5db',
+                                    todayTextColor: isDarkMode ? '#ffffff' : '#3b6812',
+                                    dayTextColor: isDarkMode ? '#f8fafc' : '#111827',
+                                    textDisabledColor: isDarkMode ? '#808080' : '#6b7280',
+                                    textInactiveColor: isDarkMode ? '#808080' : '#6b7280',
+                                    textDayStyle: { color: isDarkMode ? '#f8fafc' : '#111827' },
                                     arrowColor: isDarkMode ? 'hsl(83, 69%, 48%)' : '#4f46e5',
-                                    monthTextColor: isDarkMode ? '#ffffff' : '#111827',
+                                    monthTextColor: isDarkMode ? '#f8fafc' : '#111827',
                                     indicatorColor: '#4f46e5',
                                     textDayFontWeight: '500',
                                     textMonthFontWeight: 'bold',
@@ -312,7 +373,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         color: '#000',
     },
     Contenido: {
-        backgroundColor: isDarkMode ? '#1e1e1e' : '#72727265',
+        backgroundColor: isDarkMode ? '#17212b' : '#72727265',
         borderRadius: 10,
         padding: 10,
         marginBottom: 10,
@@ -323,7 +384,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     },
     // Estilo adaptado especialmente para el contenedor del Calendario
     ContenidoCalendario: {
-        backgroundColor: isDarkMode ? '#1e1e1e' : 'rgba(255, 255, 255, 0.85)',
+        backgroundColor: isDarkMode ? '#17212b' : 'rgba(255, 255, 255, 0.92)',
         borderRadius: 12,
         padding: 8,
         marginBottom: 15,
@@ -335,6 +396,52 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
+    diaCalendario: {
+        width: '100%',
+        minHeight: 48,
+        alignItems: 'center',
+        paddingTop: 2,
+        paddingHorizontal: 1,
+    },
+    numeroDia: {
+        minWidth: 24,
+        height: 24,
+        paddingHorizontal: 4,
+        borderRadius: 12,
+        overflow: 'hidden',
+        color: isDarkMode ? '#f8fafc' : '#111827',
+        fontSize: 13,
+        lineHeight: 24,
+        textAlign: 'center',
+    },
+    numeroDiaSeleccionado: {
+        color: '#ffffff',
+        backgroundColor: '#4f46e5',
+        fontWeight: '700',
+    },
+    numeroDiaInactivo: {
+        color: isDarkMode ? '#808080' : '#9ca3af',
+    },
+    numeroDiaHoy: {
+        color: isDarkMode ? '#a8d52a' : '#477b18',
+        fontWeight: '800',
+    },
+    nombreEventoDia: {
+        width: '100%',
+        marginTop: 1,
+        paddingHorizontal: 2,
+        color: isDarkMode ? '#17210c' : '#355512',
+        backgroundColor: isDarkMode ? '#a8d52a' : '#dcebbf',
+        borderRadius: 3,
+        fontSize: 8,
+        lineHeight: 12,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    nombreEventoDiaSeleccionado: {
+        color: '#ffffff',
+        backgroundColor: '#4f46e5',
+    },
     scrollView: {
         width: '100%',
     },
@@ -344,7 +451,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     },
     card: {
         width: width * 0.65,
-        backgroundColor: isDarkMode ? '#ffffff' : '#4f46e5',
+        backgroundColor: isDarkMode ? '#263449' : '#4f46e5',
         borderRadius: 10,
         padding: 10,
         marginRight: 12,
@@ -369,22 +476,22 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     nombreTexto: {
         fontSize: 15,
         fontWeight: 'bold',
-        color: isDarkMode ? '#111827' : '#ffffff',
+        color: '#ffffff',
     },
     usuarioTexto: {
         fontSize: 12,
-        color: isDarkMode ? '#6b7280' : '#a1a1aa',
+        color: isDarkMode ? '#cbd5e1' : '#e5e7eb',
     },
     badgeCategoria: {
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 6,
-        backgroundColor: isDarkMode ? '#f3f4f6' : '#333333',
+        backgroundColor: isDarkMode ? '#334155' : '#333333',
     },
     badgeTexto: {
         fontSize: 9,
         fontWeight: '500',
-        color: isDarkMode ? '#4b5563' : '#d1d5db',
+        color: isDarkMode ? '#e2e8f0' : '#d1d5db',
     },
     claveContainer: {
         flexDirection: 'row',
@@ -394,13 +501,13 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 6,
         borderWidth: 1,
-        backgroundColor: isDarkMode ? '#f9fafb' : '#2a2a2a',
-        borderColor: isDarkMode ? '#ccc' : '#333',
+        backgroundColor: isDarkMode ? '#111827' : '#2a2a2a',
+        borderColor: isDarkMode ? '#475569' : '#333',
     },
     claveTexto: {
         fontSize: 13,
         fontFamily: 'monospace',
-        color: isDarkMode ? '#374151' : '#f3f4f6',
+        color: '#f3f4f6',
     },
     ojoBtn: {
         padding: 2,
