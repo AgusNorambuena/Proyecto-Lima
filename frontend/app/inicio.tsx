@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, Image, Pressable, useWindowDimensions, ScrollView, ImageBackground, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter, Link, useLocalSearchParams } from 'expo-router';
+import { useRouter, Link, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
@@ -26,6 +26,12 @@ interface Credencial {
     categoria: string;
 }
 
+interface EventoAgenda {
+    id: number;
+    titulo: string;
+    fecha: string;
+}
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Inicio() {
@@ -37,6 +43,7 @@ export default function Inicio() {
     const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
     const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
     const [selectedDate, setSelectedDate] = useState('');
+    const [eventosPorFecha, setEventosPorFecha] = useState<Record<string, string[]>>({});
 
     const { isDarkMode } = useTheme();
 
@@ -73,6 +80,32 @@ export default function Inicio() {
 
         obtenerUltimasContraseñas();
     }, [userId]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (!userId) return undefined;
+            let activo = true;
+
+            const obtenerEventos = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`);
+                    if (!response.ok) throw new Error('No se pudieron cargar los eventos.');
+                    const eventos: EventoAgenda[] = await response.json();
+                    const agrupados = eventos.reduce<Record<string, string[]>>((resultado, evento) => {
+                        resultado[evento.fecha] = [...(resultado[evento.fecha] ?? []), evento.titulo];
+                        return resultado;
+                    }, {});
+
+                    if (activo) setEventosPorFecha(agrupados);
+                } catch (error) {
+                    console.error('Error al cargar eventos en inicio:', error);
+                }
+            };
+
+            void obtenerEventos();
+            return () => { activo = false; };
+        }, [userId])
+    );
 
     const toggleVisibilidad = (id: number) => {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -213,6 +246,38 @@ export default function Inicio() {
                                 markedDates={{
                                     [selectedDate]: { selected: true, selectedColor: '#4f46e5' }
                                 }}
+                                dayComponent={({ date, state, marking, onPress }) => {
+                                    const fechaDia = date?.dateString ?? '';
+                                    const nombresEventos = eventosPorFecha[fechaDia] ?? [];
+                                    const seleccionado = Boolean(marking?.selected);
+                                    const inactivo = state === 'disabled' || state === 'inactive';
+
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`${fechaDia}${nombresEventos.length ? `: ${nombresEventos.join(', ')}` : ''}`}
+                                            onPress={() => date && onPress?.(date)}
+                                            style={styles.diaCalendario}
+                                        >
+                                            <Text style={[
+                                                styles.numeroDia,
+                                                seleccionado && styles.numeroDiaSeleccionado,
+                                                !seleccionado && inactivo && styles.numeroDiaInactivo,
+                                                !seleccionado && state === 'today' && styles.numeroDiaHoy,
+                                            ]}>
+                                                {date?.day}
+                                            </Text>
+                                            {nombresEventos.length > 0 && (
+                                                <Text
+                                                    style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    );
+                                }}
                                 theme={{
                                     backgroundColor: 'transparent',
                                     calendarBackground: isDarkMode ? '#000000' : '#ffffff',
@@ -330,6 +395,52 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 4,
         elevation: 3,
+    },
+    diaCalendario: {
+        width: '100%',
+        minHeight: 48,
+        alignItems: 'center',
+        paddingTop: 2,
+        paddingHorizontal: 1,
+    },
+    numeroDia: {
+        minWidth: 24,
+        height: 24,
+        paddingHorizontal: 4,
+        borderRadius: 12,
+        overflow: 'hidden',
+        color: isDarkMode ? '#f8fafc' : '#111827',
+        fontSize: 13,
+        lineHeight: 24,
+        textAlign: 'center',
+    },
+    numeroDiaSeleccionado: {
+        color: '#ffffff',
+        backgroundColor: '#4f46e5',
+        fontWeight: '700',
+    },
+    numeroDiaInactivo: {
+        color: isDarkMode ? '#808080' : '#9ca3af',
+    },
+    numeroDiaHoy: {
+        color: isDarkMode ? '#a8d52a' : '#477b18',
+        fontWeight: '800',
+    },
+    nombreEventoDia: {
+        width: '100%',
+        marginTop: 1,
+        paddingHorizontal: 2,
+        color: isDarkMode ? '#17210c' : '#355512',
+        backgroundColor: isDarkMode ? '#a8d52a' : '#dcebbf',
+        borderRadius: 3,
+        fontSize: 8,
+        lineHeight: 12,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    nombreEventoDiaSeleccionado: {
+        color: '#ffffff',
+        backgroundColor: '#4f46e5',
     },
     scrollView: {
         width: '100%',

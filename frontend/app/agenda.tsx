@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -9,10 +9,13 @@ import {
   ImageBackground, 
   TextInput, 
   useWindowDimensions,
+    Modal,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AppPopup, { useAppPopup } from './components/AppPopup';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
@@ -21,62 +24,134 @@ interface Evento {
   id: number;
   titulo: string;
   fecha: string;
+    hora?: string | null;
   completado: boolean;
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
+function obtenerFechaLocal() {
+        const hoy = new Date();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        return `${hoy.getFullYear()}-${mes}-${dia}`;
+}
+
 export default function AgendaScreen() {
     const { width } = useWindowDimensions();
-    const router = useRouter();
     const { userId, fecha } = useLocalSearchParams();
     const { popup, showPopup, dismissPopup } = useAppPopup();
 
     const { isDarkMode } = useTheme();
     const colors = isDarkMode
-        ? { text: '#f8fafc', muted: '#cbd5e1', surface: '#17212b', input: '#1f2937', border: '#475569' }
-        : { text: '#17211a', muted: '#475569', surface: 'rgba(255, 255, 255, 0.92)', input: 'rgba(50, 80, 180, 0.75)', border: 'rgba(255, 255, 255, 0.55)' };
+        ? { text: '#f8fafc', muted: '#cbd5e1', surface: '#17212b', input: '#1f2937', border: '#475569', accent: '#a8d52a' }
+        : { text: '#17211a', muted: '#475569', surface: 'rgba(255, 255, 255, 0.94)', input: '#f2f6eb', border: '#d8e2cb', accent: '#477b18' };
     const [nuevoEvento, setNuevoEvento] = useState('');
+    const [horaSeleccionada, setHoraSeleccionada] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
     const [fechaSeleccionada, setFechaSeleccionada] = useState(
-        typeof fecha === 'string' ? fecha : new Date().toISOString().split('T')[0]
+        typeof fecha === 'string' ? fecha : obtenerFechaLocal()
     );
     const [listaEventos, setListaEventos] = useState<Evento[]>([]);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
+    const [guardando, setGuardando] = useState(false);
+    const [eliminandoId, setEliminandoId] = useState<number | null>(null);
+    const [errorCarga, setErrorCarga] = useState(false);
 
-    useEffect(() => {
-        obtenerEventosAPI();
+    const solicitarEventos = useCallback(async () => {
+        if (!userId) return [] as Evento[];
+        const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`);
+        if (!response.ok) throw new Error('No se pudieron cargar los eventos.');
+        return await response.json() as Evento[];
     }, [userId]);
 
-    const obtenerEventosAPI = async () => {
-        if (!userId) return;
+    useEffect(() => {
+        let activo = true;
+        solicitarEventos()
+            .then((eventos) => {
+                if (activo) {
+                    setListaEventos(eventos);
+                    setErrorCarga(false);
+                }
+            })
+            .catch((error: unknown) => {
+                console.error('Error al obtener eventos:', error);
+                if (activo) setErrorCarga(true);
+            })
+            .finally(() => {
+                if (activo) setCargando(false);
+            });
+        return () => { activo = false; };
+    }, [solicitarEventos]);
+
+    const reintentarCarga = async () => {
         try {
-            setCargando(true);
-            const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`);
-            if (response.ok) {
-                const data = await response.json();
-                setListaEventos(data);
-            }
+            const eventos = await solicitarEventos();
+            setListaEventos(eventos);
+            setErrorCarga(false);
         } catch (error) {
-            console.error("Error al obtener eventos:", error);
+            console.error('Error al obtener eventos:', error);
+            setErrorCarga(true);
         } finally {
             setCargando(false);
         }
     };
 
+    const eliminarEventoAPI = async (evento: Evento) => {
+        if (eliminandoId !== null) return;
+        setEliminandoId(evento.id);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/eventos/${evento.id}/user/${userId}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) throw new Error('No se pudo eliminar el evento.');
+            setListaEventos((eventos) => eventos.filter((item) => item.id !== evento.id));
+        } catch (error) {
+            console.error('Error al eliminar evento:', error);
+            showPopup({ title: 'No se pudo eliminar', message: 'Inténtalo de nuevo en unos momentos.', tone: 'error' });
+        } finally {
+            setEliminandoId(null);
+        }
+    };
+
+    const confirmarEliminacion = (evento: Evento) => {
+        showPopup({
+            title: 'Eliminar evento',
+            message: `¿Quieres eliminar “${evento.titulo}”? Esta acción no se puede deshacer.`,
+            tone: 'confirm',
+            actions: [
+                { label: 'Cancelar', variant: 'secondary' },
+                { label: 'Eliminar', variant: 'danger', onPress: () => eliminarEventoAPI(evento) },
+            ],
+        });
+    };
+
     const guardarEventoAPI = async () => {
+        if (guardando) return;
         if (!nuevoEvento.trim()) {
             showPopup({ title: 'Campo vacío', message: 'Por favor escribe el detalle de tu evento.', tone: 'info' });
+            return;
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaSeleccionada)) {
+            showPopup({ title: 'Fecha inválida', message: 'Usa el formato AAAA-MM-DD.', tone: 'info' });
+            return;
+        }
+
+        if (horaSeleccionada && !/^([01]\d|2[0-3]):[0-5]\d$/.test(horaSeleccionada)) {
+            showPopup({ title: 'Hora inválida', message: 'Usa el formato de 24 horas, por ejemplo 14:30.', tone: 'info' });
             return;
         }
 
         const objetoEnviar = {
             titulo: nuevoEvento.trim(),
             fecha: fechaSeleccionada,
+            hora: horaSeleccionada || null,
             completado: false
         };
 
         try {
-            setCargando(true);
+            setGuardando(true);
             const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -86,9 +161,9 @@ export default function AgendaScreen() {
             if (response.ok) {
                 const eventoCreado = await response.json();
                 setListaEventos((prev) => [eventoCreado, ...prev]);
-                
                 setNuevoEvento('');
-                showPopup({ title: '¡Éxito! 📅', message: 'Evento guardado correctamente en tu agenda.', tone: 'success' });
+                setHoraSeleccionada('');
+                setModalVisible(false);
             } else {
                 showPopup({ title: 'Error', message: 'No se pudo guardar el evento en el servidor.', tone: 'error' });
             }
@@ -96,11 +171,16 @@ export default function AgendaScreen() {
             console.error("Error al guardar:", error);
             showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con el servidor.', tone: 'error' });
         } finally {
-            setCargando(false);
+            setGuardando(false);
         }
     };
 
-    const diasMesGrid = Array.from({ length: 15 }, (_, index) => index + 1);
+    const abrirFormularioRapido = () => {
+        setFechaSeleccionada(typeof fecha === 'string' ? fecha : obtenerFechaLocal());
+        setNuevoEvento('');
+        setHoraSeleccionada('');
+        setModalVisible(true);
+    };
 
     return (
         <View style={styles.wrapper}>
@@ -129,62 +209,150 @@ export default function AgendaScreen() {
                         />
                     </View>
 
-                    {/* Título de la Sección */}
-                    <View style={styles.tituloSeccionContainer}>
-                        <Text style={styles.tituloSeccion}>AGENDA</Text>
+                    <View style={styles.headerAgenda}>
+                        <View style={styles.tituloSeccionContainer}>
+                            <Text style={[styles.tituloSeccion, { color: colors.text }]}>AGENDA</Text>
+                            <Text style={[styles.subtitulo, { color: colors.muted }]}>Tus recuerdos y próximos eventos</Text>
+                        </View>
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Anotar un evento"
+                            style={[styles.botonAnotar, { backgroundColor: colors.accent }]}
+                            onPress={abrirFormularioRapido}
+                        >
+                            <Ionicons name="add" size={22} color={isDarkMode ? '#17210c' : '#ffffff'} />
+                            <Text style={[styles.botonAnotarTexto, { color: isDarkMode ? '#17210c' : '#ffffff' }]}>Anotar</Text>
+                        </Pressable>
                     </View>
 
-                    {/* Contenedor Principal (Tarjeta del Mes) */}
+                    {/* Lista de eventos y estado vacío */}
                     <View style={[styles.encuadreMes, { backgroundColor: colors.surface, borderColor: isDarkMode ? '#475569' : colors.border }]}>
                         <Text style={[styles.mesTitulo, { color: colors.text }]}>
-                            {fecha ? `EVENTOS (${fecha})` : 'MES'}
+                            {fecha ? `EVENTOS · ${fecha}` : 'EVENTOS'}
                         </Text>
 
-                        {listaEventos.length > 0 ? (
-                            <View style={{ width: '100%', marginBottom: 15 }}>
-                                {listaEventos.slice(0, 4).map((ev) => (
-                                    <View key={ev.id} style={[styles.eventoItemCard, { backgroundColor: isDarkMode ? '#263449' : 'rgba(180, 240, 180, 0.9)' }]}>
-                                        <Text style={[styles.eventoItemTexto, { color: colors.text }]} numberOfLines={1}>• {ev.titulo}</Text>
-                                        <Text style={[styles.eventoItemFecha, { color: colors.muted }]}>{ev.fecha}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        ) : (
-                            <View style={styles.gridContainer}>
-                                {diasMesGrid.map((item) => (
-                                    <View key={item} style={[styles.gridCard, { backgroundColor: isDarkMode ? '#263449' : 'rgba(180, 240, 180, 0.85)', borderColor: isDarkMode ? '#475569' : colors.border }]} />
-                                ))}
-                            </View>
-                        )}
-                    </View>
-
-                    {/* Formulario para Añadir Evento */}
-                    <View style={styles.inputSection}>
-                        <Text style={[styles.labelEvento, { color: colors.text }]}>AÑADIR EVENTO:</Text>
-                        
-                        <TextInput
-                            style={[styles.inputEvento, { marginBottom: 10, backgroundColor: colors.input, borderColor: colors.border }]}
-                            placeholder="Fecha (YYYY-MM-DD)..."
-                            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                            value={fechaSeleccionada}
-                            onChangeText={setFechaSeleccionada}
-                        />
-
-                        <TextInput
-                            style={[styles.inputEvento, { backgroundColor: colors.input, borderColor: colors.border }]}
-                            placeholder="Escribe un evento..."
-                            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                            value={nuevoEvento}
-                            onChangeText={setNuevoEvento}
-                        />
-
-                        <Pressable style={styles.btnGuardarEvento} onPress={guardarEventoAPI}>
-                            <Text style={styles.btnGuardarTexto}>Guardar Evento</Text>
-                        </Pressable>
+                        <View style={styles.eventosViewport}>
+                            {cargando ? (
+                                <View style={styles.estadoLista}>
+                                    <ActivityIndicator color={colors.accent} />
+                                    <Text style={[styles.estadoTexto, { color: colors.muted }]}>Cargando eventos...</Text>
+                                </View>
+                            ) : errorCarga ? (
+                                <View style={styles.estadoLista}>
+                                    <Text style={[styles.estadoTexto, { color: colors.muted }]}>No se pudieron cargar los eventos.</Text>
+                                    <Pressable onPress={() => {
+                                        setCargando(true);
+                                        setErrorCarga(false);
+                                        void reintentarCarga();
+                                    }}>
+                                        <Text style={[styles.reintentarTexto, { color: colors.accent }]}>Reintentar</Text>
+                                    </Pressable>
+                                </View>
+                            ) : listaEventos.length > 0 ? (
+                                <ScrollView
+                                    style={styles.eventosScroll}
+                                    contentContainerStyle={styles.listaEventos}
+                                    showsVerticalScrollIndicator
+                                    nestedScrollEnabled
+                                >
+                                    {listaEventos.map((ev) => (
+                                        <View key={ev.id} style={[styles.eventoItemCard, { backgroundColor: isDarkMode ? '#263449' : '#f2f6eb' }]}>
+                                            <View style={styles.detalleEvento}>
+                                                <Text style={[styles.eventoItemTexto, { color: colors.text }]}>{ev.titulo}</Text>
+                                                <Text style={[styles.eventoItemFecha, { color: colors.muted }]}>
+                                                    {ev.fecha}{ev.hora ? ` · ${ev.hora.slice(0, 5)}` : ''}
+                                                </Text>
+                                            </View>
+                                            <Pressable
+                                                accessibilityRole="button"
+                                                accessibilityLabel={`Eliminar evento ${ev.titulo}`}
+                                                onPress={() => confirmarEliminacion(ev)}
+                                                disabled={eliminandoId !== null}
+                                                style={styles.botonEliminar}
+                                            >
+                                                {eliminandoId === ev.id ? (
+                                                    <ActivityIndicator size="small" color="#b42318" />
+                                                ) : (
+                                                    <Ionicons name="trash-outline" size={19} color="#b42318" />
+                                                )}
+                                            </Pressable>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <View style={styles.estadoLista}>
+                                    <Ionicons name="calendar-clear-outline" size={28} color={colors.muted} />
+                                    <Text style={[styles.estadoVacioTitulo, { color: colors.text }]}>No hay eventos</Text>
+                                    <Text style={[styles.estadoTexto, { color: colors.muted }]}>Anota aquí ese recuerdo o algo que no quieras olvidar.</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
 
                 </ScrollView>
             </SafeAreaView>
+            <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContenido, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitulo, { color: colors.text }]}>Nueva anotación</Text>
+                                <Text style={[styles.modalSubtitulo, { color: colors.muted }]}>Guarda algo para recordar</Text>
+                            </View>
+                            <Pressable onPress={() => setModalVisible(false)} accessibilityLabel="Cerrar">
+                                <Ionicons name="close" size={24} color={colors.muted} />
+                            </Pressable>
+                        </View>
+                        <TextInput
+                            autoFocus
+                            accessibilityLabel="Recuerdo o evento"
+                            style={[styles.inputEvento, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
+                            placeholder="¿Qué quieres recordar?"
+                            placeholderTextColor={colors.muted}
+                            value={nuevoEvento}
+                            onChangeText={setNuevoEvento}
+                            returnKeyType="done"
+                            onSubmitEditing={() => void guardarEventoAPI()}
+                        />
+                        <View style={styles.camposFechaHora}>
+                            <View style={styles.campoSecundario}>
+                                <Text style={[styles.labelCampo, { color: colors.muted }]}>FECHA</Text>
+                                <TextInput
+                                    style={[styles.inputSecundario, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
+                                    value={fechaSeleccionada}
+                                    onChangeText={setFechaSeleccionada}
+                                    placeholder="AAAA-MM-DD"
+                                    placeholderTextColor={colors.muted}
+                                    keyboardType="numbers-and-punctuation"
+                                />
+                            </View>
+                            <View style={styles.campoSecundario}>
+                                <Text style={[styles.labelCampo, { color: colors.muted }]}>HORA · OPCIONAL</Text>
+                                <TextInput
+                                    style={[styles.inputSecundario, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
+                                    value={horaSeleccionada}
+                                    onChangeText={setHoraSeleccionada}
+                                    placeholder="HH:MM"
+                                    placeholderTextColor={colors.muted}
+                                    keyboardType="numbers-and-punctuation"
+                                />
+                            </View>
+                        </View>
+                        <Pressable
+                            style={[styles.btnGuardarEvento, { backgroundColor: colors.accent }, guardando && styles.botonDeshabilitado]}
+                            onPress={() => void guardarEventoAPI()}
+                            disabled={guardando}
+                        >
+                            {guardando ? <ActivityIndicator color={isDarkMode ? '#17210c' : '#ffffff'} /> : (
+                                <>
+                                    <Ionicons name="checkmark" size={20} color={isDarkMode ? '#17210c' : '#ffffff'} />
+                                    <Text style={[styles.btnGuardarTexto, { color: isDarkMode ? '#17210c' : '#ffffff' }]}>Guardar anotación</Text>
+                                </>
+                            )}
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
             <AppPopup popup={popup} onDismiss={dismissPopup} />
         </View>
     );
@@ -231,20 +399,39 @@ const styles = StyleSheet.create({
         height: 100,
     },
     tituloSeccionContainer: {
-        marginBottom: 12,
+        flex: 1,
     },
     tituloSeccion: {
-        fontSize: 34,
-        fontWeight: '900',
-        color: '#8b00ff',
-        letterSpacing: 2,
-        textShadowColor: 'rgba(0, 0, 0, 0.15)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+        fontSize: 30,
+        fontWeight: '800',
+    },
+    headerAgenda: {
+        width: '88%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 16,
+    },
+    subtitulo: {
+        marginTop: 3,
+        fontSize: 13,
+    },
+    botonAnotar: {
+        minHeight: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+    },
+    botonAnotarTexto: {
+        fontSize: 15,
+        fontWeight: '700',
     },
     encuadreMes: {
         backgroundColor: 'rgba(50, 80, 180, 0.75)',
-        borderRadius: 20,
+        borderRadius: 10,
         paddingVertical: 15,
         paddingHorizontal: 15,
         width: '88%',
@@ -258,36 +445,67 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     mesTitulo: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#8b00ff',
-        marginBottom: 15,
-        letterSpacing: 1.5,
+        alignSelf: 'flex-start',
+        fontSize: 15,
+        fontWeight: '800',
+        marginBottom: 12,
     },
-    gridContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
+    estadoLista: {
+        width: '100%',
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingHorizontal: 16,
+    },
+    eventosViewport: {
+        width: '100%',
+        height: 360,
+    },
+    eventosScroll: {
+        flex: 1,
+    },
+    estadoVacioTitulo: {
+        fontSize: 17,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    estadoTexto: {
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    reintentarTexto: {
+        fontSize: 14,
+        fontWeight: '700',
+        padding: 8,
+    },
+    listaEventos: {
         width: '100%',
     },
-    gridCard: {
-        width: '30%',
-        height: 42,
-        backgroundColor: 'rgba(180, 240, 180, 0.85)',
-        borderRadius: 8,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-    },
     eventoItemCard: {
-        backgroundColor: 'rgba(180, 240, 180, 0.9)',
-        padding: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
         borderRadius: 8,
         marginBottom: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
+        gap: 12,
+    },
+    detalleEvento: {
+        flex: 1,
+        gap: 4,
+    },
+    botonEliminar: {
+        width: 40,
+        height: 40,
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8,
+        backgroundColor: 'rgba(180, 35, 24, 0.08)',
     },
     eventoItemTexto: {
         color: '#111',
@@ -296,40 +514,80 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     eventoItemFecha: {
-        color: '#333',
         fontSize: 12,
         fontWeight: '600',
     },
-    inputSection: {
-        width: '88%',
-        marginTop: 15,
-    },
-    labelEvento: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        color: '#111',
-        marginBottom: 6,
-    },
     inputEvento: {
-        backgroundColor: 'rgba(50, 80, 180, 0.75)',
-        borderRadius: 15,
+        borderRadius: 8,
         paddingHorizontal: 15,
-        paddingVertical: 12,
-        color: '#fff',
+        paddingVertical: 14,
         fontSize: 15,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     btnGuardarEvento: {
-        backgroundColor: '#4f46e5',
         marginTop: 10,
-        paddingVertical: 12,
-        borderRadius: 12,
+        minHeight: 48,
+        paddingHorizontal: 14,
+        borderRadius: 8,
         alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
     },
     btnGuardarTexto: {
-        color: '#fff',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 15,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 20,
+        backgroundColor: 'rgba(11, 18, 28, 0.62)',
+    },
+    modalContenido: {
+        width: '100%',
+        maxWidth: 440,
+        alignSelf: 'center',
+        padding: 20,
+        borderWidth: 1,
+        borderRadius: 12,
+        elevation: 12,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 18,
+    },
+    modalTitulo: {
+        fontSize: 20,
+        fontWeight: '800',
+    },
+    modalSubtitulo: {
+        marginTop: 4,
+        fontSize: 13,
+    },
+    camposFechaHora: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 14,
+    },
+    campoSecundario: {
+        flex: 1,
+    },
+    labelCampo: {
+        marginBottom: 6,
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    inputSecundario: {
+        minHeight: 46,
+        paddingHorizontal: 10,
+        borderWidth: 1,
+        borderRadius: 8,
+        fontSize: 13,
+    },
+    botonDeshabilitado: {
+        opacity: 0.7,
     },
 });
