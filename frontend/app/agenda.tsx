@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,27 +8,97 @@ import {
   ScrollView, 
   ImageBackground, 
   TextInput, 
-  useWindowDimensions 
+  useWindowDimensions,
+  Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
+interface Evento {
+  id: number;
+  titulo: string;
+  fecha: string;
+  completado: boolean;
+}
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+
 export default function AgendaScreen() {
     const { width } = useWindowDimensions();
     const router = useRouter();
-    const { userId } = useLocalSearchParams();
+    const { userId, fecha } = useLocalSearchParams();
 
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [nuevoEvento, setNuevoEvento] = useState('');
+    const [fechaSeleccionada, setFechaSeleccionada] = useState(
+        typeof fecha === 'string' ? fecha : new Date().toISOString().split('T')[0]
+    );
+    const [listaEventos, setListaEventos] = useState<Evento[]>([]);
+    const [cargando, setCargando] = useState(false);
 
-    // Generamos 15 elementos simulando la cuadrícula del mes que aparece en la imagen
+    useEffect(() => {
+        obtenerEventosAPI();
+    }, [userId]);
+
+    const obtenerEventosAPI = async () => {
+        if (!userId) return;
+        try {
+            setCargando(true);
+            const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setListaEventos(data);
+            }
+        } catch (error) {
+            console.error("Error al obtener eventos:", error);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const guardarEventoAPI = async () => {
+        if (!nuevoEvento.trim()) {
+            Alert.alert("Campo vacío", "Por favor escribe el detalle de tu evento.");
+            return;
+        }
+
+        const objetoEnviar = {
+            titulo: nuevoEvento.trim(),
+            fecha: fechaSeleccionada,
+            completado: false
+        };
+
+        try {
+            setCargando(true);
+            const response = await fetch(`${API_BASE_URL}/api/eventos/user/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(objetoEnviar),
+            });
+
+            if (response.ok) {
+                const eventoCreado = await response.json();
+                setListaEventos((prev) => [eventoCreado, ...prev]);
+                
+                setNuevoEvento('');
+                Alert.alert("¡Éxito! 📅", "Evento guardado correctamente en tu agenda.");
+            } else {
+                Alert.alert("Error", "No se pudo guardar el evento en el servidor.");
+            }
+        } catch (error) {
+            console.error("Error al guardar:", error);
+            Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
     const diasMesGrid = Array.from({ length: 15 }, (_, index) => index + 1);
 
     return (
         <View style={styles.wrapper}>
-            {/* Fondo de pantalla general */}
             <ImageBackground 
                 source={require('../assets/images/FondoLima.png')} 
                 style={StyleSheet.absoluteFill}
@@ -40,7 +110,7 @@ export default function AgendaScreen() {
             <SafeAreaView style={styles.body} edges={['top', 'left', 'right']}>
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     
-                    {/* Botón de Modo Oscuro / Claro */}
+                    {/* Botón Modo Oscuro / Claro */}
                     <View style={styles.modosContainer}>
                         <Pressable 
                             style={styles.modosBtn} 
@@ -63,26 +133,47 @@ export default function AgendaScreen() {
                         />
                     </View>
 
-                    {/* Título de la Sección: AGENDA */}
+                    {/* Título de la Sección */}
                     <View style={styles.tituloSeccionContainer}>
                         <Text style={styles.tituloSeccion}>AGENDA</Text>
                     </View>
 
-                    {/* Contenedor Principal (Caja texturizada del Mes) */}
+                    {/* Contenedor Principal (Tarjeta del Mes) */}
                     <View style={styles.encuadreMes}>
-                        <Text style={styles.mesTitulo}>MES</Text>
+                        <Text style={styles.mesTitulo}>
+                            {fecha ? `EVENTOS (${fecha})` : 'MES'}
+                        </Text>
 
-                        {/* Cuadrícula de elementos del mes (3 columnas x 5 filas) */}
-                        <View style={styles.gridContainer}>
-                            {diasMesGrid.map((item) => (
-                                <View key={item} style={styles.gridCard} />
-                            ))}
-                        </View>
+                        {listaEventos.length > 0 ? (
+                            <View style={{ width: '100%', marginBottom: 15 }}>
+                                {listaEventos.slice(0, 4).map((ev) => (
+                                    <View key={ev.id} style={styles.eventoItemCard}>
+                                        <Text style={styles.eventoItemTexto} numberOfLines={1}>• {ev.titulo}</Text>
+                                        <Text style={styles.eventoItemFecha}>{ev.fecha}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.gridContainer}>
+                                {diasMesGrid.map((item) => (
+                                    <View key={item} style={styles.gridCard} />
+                                ))}
+                            </View>
+                        )}
                     </View>
 
-                    {/* Etiqueta e Input para Añadir Evento */}
+                    {/* Formulario para Añadir Evento */}
                     <View style={styles.inputSection}>
                         <Text style={styles.labelEvento}>AÑADIR EVENTO:</Text>
+                        
+                        <TextInput
+                            style={[styles.inputEvento, { marginBottom: 10 }]}
+                            placeholder="Fecha (YYYY-MM-DD)..."
+                            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                            value={fechaSeleccionada}
+                            onChangeText={setFechaSeleccionada}
+                        />
+
                         <TextInput
                             style={styles.inputEvento}
                             placeholder="Escribe un evento..."
@@ -90,24 +181,13 @@ export default function AgendaScreen() {
                             value={nuevoEvento}
                             onChangeText={setNuevoEvento}
                         />
+
+                        <Pressable style={styles.btnGuardarEvento} onPress={guardarEventoAPI}>
+                            <Text style={styles.btnGuardarTexto}>Guardar Evento</Text>
+                        </Pressable>
                     </View>
 
                 </ScrollView>
-
-                {/* Barra de Navegación Inferior Estilizada
-                <View style={styles.bottomNav}>
-                    <Pressable style={styles.navIconBtn} onPress={() => router.push({ pathname: '/inicio', params: { userId } })}>
-                        <Ionicons name="person-outline" size={26} color="#fff" />
-                    </Pressable>
-
-                    <Pressable style={styles.navFabBtn} onPress={() => {}}>
-                        <Ionicons name="add" size={32} color="#fff" />
-                    </Pressable>
-
-                    <Pressable style={styles.navIconBtn} onPress={() => {}}>
-                        <Ionicons name="settings-outline" size={26} color="#fff" />
-                    </Pressable>
-                </View> */}
             </SafeAreaView>
         </View>
     );
@@ -159,14 +239,14 @@ const styles = StyleSheet.create({
     tituloSeccion: {
         fontSize: 34,
         fontWeight: '900',
-        color: '#8b00ff', // Tono morado característico de la imagen
+        color: '#8b00ff',
         letterSpacing: 2,
         textShadowColor: 'rgba(0, 0, 0, 0.15)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,
     },
     encuadreMes: {
-        backgroundColor: 'rgba(50, 80, 180, 0.75)', // Tono azulado translúcido de la tarjeta grande
+        backgroundColor: 'rgba(50, 80, 180, 0.75)',
         borderRadius: 20,
         paddingVertical: 15,
         paddingHorizontal: 15,
@@ -181,7 +261,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     mesTitulo: {
-        fontSize: 26,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#8b00ff',
         marginBottom: 15,
@@ -196,16 +276,32 @@ const styles = StyleSheet.create({
     gridCard: {
         width: '30%',
         height: 42,
-        backgroundColor: 'rgba(180, 240, 180, 0.85)', // Verde claro similar a las tarjetitas internas
+        backgroundColor: 'rgba(180, 240, 180, 0.85)',
         borderRadius: 8,
         marginBottom: 12,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.5)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-        elevation: 2,
+    },
+    eventoItemCard: {
+        backgroundColor: 'rgba(180, 240, 180, 0.9)',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+    },
+    eventoItemTexto: {
+        color: '#111',
+        fontWeight: 'bold',
+        fontSize: 14,
+        flex: 1,
+    },
+    eventoItemFecha: {
+        color: '#333',
+        fontSize: 12,
+        fontWeight: '600',
     },
     inputSection: {
         width: '88%',
@@ -227,37 +323,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
-    bottomNav: {
-        position: 'absolute',
-        bottom: 15,
-        alignSelf: 'center',
-        width: '88%',
-        height: 65,
-        backgroundColor: '#22c1dc', // Turquesa brillante de la barra inferior
-        borderRadius: 18,
-        flexDirection: 'row',
-        justifyContent: 'space-around',
+    btnGuardarEvento: {
+        backgroundColor: '#4f46e5',
+        marginTop: 10,
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 6,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.4)',
     },
-    navIconBtn: {
-        padding: 10,
-    },
-    navFabBtn: {
-        backgroundColor: 'rgba(150, 230, 180, 0.9)',
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#fff',
-        marginBottom: 2,
+    btnGuardarTexto: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
