@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 
 // Tomamos la IP de tu PC configurada en el .env
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { popup, showPopup, dismissPopup } = useAppPopup();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -16,7 +18,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     // Validaciones básicas de campos vacíos
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Campos incompletos', 'Por favor completa todos los campos.');
+      showPopup({ title: 'Campos incompletos', message: 'Por favor completa todos los campos.', tone: 'info' });
       return;
     }
 
@@ -36,26 +38,23 @@ export default function RegisterScreen() {
       });
 
       if (response.status === 201 || response.ok) {
-        Alert.alert(
-          '¡Cuenta creada!',
-          'Tu usuario ha sido registrado exitosamente. Ya puedes iniciar sesión.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.back(), // Redirige al Login (index.tsx)
-            },
-          ]
-        );
+        showPopup({
+          title: '¡Cuenta creada!',
+          message: 'Tu usuario ha sido registrado exitosamente. Ya puedes iniciar sesión.',
+          tone: 'success',
+          actions: [{ label: 'OK', onPress: () => router.back() }],
+        });
       } else {
         const errorText = await response.text();
-        Alert.alert('Error', errorText || 'No se pudo crear la cuenta. Verifica los datos.');
+        showPopup({ title: 'Error', message: errorText || 'No se pudo crear la cuenta. Verifica los datos.', tone: 'error' });
       }
     } catch (error) {
       console.error('Error al registrar usuario:', error);
-      Alert.alert(
-        'Error de conexión',
-        'No se pudo conectar con el servidor. Revisa que Spring Boot esté levantado y conectado a la misma red Wi-Fi.'
-      );
+      showPopup({
+        title: 'Error de conexión',
+        message: 'No se pudo conectar con el servidor. Revisa que Spring Boot esté levantado y conectado a la misma red Wi-Fi.',
+        tone: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -108,6 +107,7 @@ export default function RegisterScreen() {
           <Text style={styles.secondaryButtonText}>Volver al Login</Text>
         </TouchableOpacity>
       </View>
+      <AppPopup popup={popup} onDismiss={dismissPopup} />
     </ImageBackground>
   );
 }

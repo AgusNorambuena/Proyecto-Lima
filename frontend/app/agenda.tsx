@@ -9,12 +9,12 @@ import {
   ImageBackground, 
   TextInput, 
   useWindowDimensions,
-  Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 
 interface Evento {
   id: number;
@@ -29,6 +29,7 @@ export default function AgendaScreen() {
     const { width } = useWindowDimensions();
     const router = useRouter();
     const { userId, fecha } = useLocalSearchParams();
+    const { popup, showPopup, dismissPopup } = useAppPopup();
 
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [nuevoEvento, setNuevoEvento] = useState('');
@@ -60,7 +61,7 @@ export default function AgendaScreen() {
 
     const guardarEventoAPI = async () => {
         if (!nuevoEvento.trim()) {
-            Alert.alert("Campo vacío", "Por favor escribe el detalle de tu evento.");
+            showPopup({ title: 'Campo vacío', message: 'Por favor escribe el detalle de tu evento.', tone: 'info' });
             return;
         }
 
@@ -83,13 +84,13 @@ export default function AgendaScreen() {
                 setListaEventos((prev) => [eventoCreado, ...prev]);
                 
                 setNuevoEvento('');
-                Alert.alert("¡Éxito! 📅", "Evento guardado correctamente en tu agenda.");
+                showPopup({ title: '¡Éxito! 📅', message: 'Evento guardado correctamente en tu agenda.', tone: 'success' });
             } else {
-                Alert.alert("Error", "No se pudo guardar el evento en el servidor.");
+                showPopup({ title: 'Error', message: 'No se pudo guardar el evento en el servidor.', tone: 'error' });
             }
         } catch (error) {
             console.error("Error al guardar:", error);
-            Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+            showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con el servidor.', tone: 'error' });
         } finally {
             setCargando(false);
         }
@@ -189,6 +190,7 @@ export default function AgendaScreen() {
 
                 </ScrollView>
             </SafeAreaView>
+            <AppPopup popup={popup} onDismiss={dismissPopup} />
         </View>
     );
 }
