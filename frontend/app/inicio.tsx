@@ -221,6 +221,17 @@ export default function Inicio() {
                             </ScrollView>
                         </View>
 
+                        {/* SECCIÓN GASTOS */}
+                        <Pressable 
+                            style={styles.Gestor} 
+                            onPress={() => router.push({
+                                pathname: '../gastos',
+                                params: { userId: userId }
+                            })}
+                        >
+                            <Text style={styles.gestorTexto}>Gastos</Text>
+                        </Pressable>
+
                         {/* SECCIÓN AGENDA */}
                         <Pressable 
                             style={styles.Gestor} 
@@ -242,68 +253,68 @@ export default function Inicio() {
                                         pathname: '../agenda',
                                         params: { userId: userId, fecha: day.dateString }
                                     });
-                                }}
-                                markedDates={{
-                                    [selectedDate]: { selected: true, selectedColor: '#4f46e5' }
-                                }}
-                                dayComponent={({ date, state, marking, onPress }) => {
-                                    const fechaDia = date?.dateString ?? '';
-                                    const nombresEventos = eventosPorFecha[fechaDia] ?? [];
-                                    const seleccionado = Boolean(marking?.selected);
-                                    const inactivo = state === 'disabled' || state === 'inactive';
+                              }}
+                              markedDates={{
+                                  [selectedDate]: { selected: true, selectedColor: '#4f46e5' }
+                              }}
+                              dayComponent={({ date, state, marking, onPress }) => {
+                                  const fechaDia = date?.dateString ?? '';
+                                  const nombresEventos = eventosPorFecha[fechaDia] ?? [];
+                                  const seleccionado = Boolean(marking?.selected);
+                                  const inactivo = state === 'disabled' || state === 'inactive';
 
-                                    return (
-                                        <Pressable
-                                            accessibilityRole="button"
-                                            accessibilityLabel={`${fechaDia}${nombresEventos.length ? `: ${nombresEventos.join(', ')}` : ''}`}
-                                            onPress={() => date && onPress?.(date)}
-                                            style={styles.diaCalendario}
-                                        >
-                                            <Text style={[
-                                                styles.numeroDia,
-                                                seleccionado && styles.numeroDiaSeleccionado,
-                                                !seleccionado && inactivo && styles.numeroDiaInactivo,
-                                                !seleccionado && state === 'today' && styles.numeroDiaHoy,
-                                            ]}>
-                                                {date?.day}
-                                            </Text>
-                                            {nombresEventos.length > 0 && (
-                                                <Text
-                                                    style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
-                                                    numberOfLines={1}
-                                                >
-                                                    {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
-                                                </Text>
-                                            )}
-                                        </Pressable>
-                                    );
-                                }}
-                                theme={{
-                                    backgroundColor: 'transparent',
-                                    calendarBackground: isDarkMode ? '#000000' : '#ffffff',
-                                    textSectionTitleColor: isDarkMode ? '#e2e8f0' : '#374151',
-                                    selectedDayBackgroundColor: '#4f46e5',
-                                    selectedDayTextColor: '#ffffff',
-                                    todayTextColor: isDarkMode ? '#ffffff' : '#3b6812',
-                                    dayTextColor: isDarkMode ? '#f8fafc' : '#111827',
-                                    textDisabledColor: isDarkMode ? '#808080' : '#6b7280',
-                                    textInactiveColor: isDarkMode ? '#808080' : '#6b7280',
-                                    textDayStyle: { color: isDarkMode ? '#f8fafc' : '#111827' },
-                                    arrowColor: isDarkMode ? 'hsl(83, 69%, 48%)' : '#4f46e5',
-                                    monthTextColor: isDarkMode ? '#f8fafc' : '#111827',
-                                    indicatorColor: '#4f46e5',
-                                    textDayFontWeight: '500',
-                                    textMonthFontWeight: 'bold',
-                                    textDayHeaderFontWeight: '600',
-                                    textDayFontSize: 13,
-                                    textMonthFontSize: 15,
-                                    textDayHeaderFontSize: 11,
-                                }}
-                            />
-                        </View>
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
+                                  return (
+                                      <Pressable
+                                          accessibilityRole="button"
+                                          accessibilityLabel={`${fechaDia}${nombresEventos.length ? `: ${nombresEventos.join(', ')}` : ''}`}
+                                          onPress={() => date && onPress?.(date)}
+                                          style={styles.diaCalendario}
+                                      >
+                                          <Text style={[
+                                              styles.numeroDia,
+                                              seleccionado && styles.numeroDiaSeleccionado,
+                                              !seleccionado && inactivo && styles.numeroDiaInactivo,
+                                              !seleccionado && state === 'today' && styles.numeroDiaHoy,
+                                          ]}>
+                                              {date?.day}
+                                          </Text>
+                                          {nombresEventos.length > 0 && (
+                                              <Text
+                                                  style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
+                                                  numberOfLines={1}
+                                              >
+                                                  {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
+                                              </Text>
+                                          )}
+                                      </Pressable>
+                                  );
+                            }}
+                              theme={{
+                                  backgroundColor: 'transparent',
+                                  calendarBackground: isDarkMode ? '#000000' : '#ffffff',
+                                  textSectionTitleColor: isDarkMode ? '#e2e8f0' : '#374151',
+                                  selectedDayBackgroundColor: '#4f46e5',
+                                  selectedDayTextColor: '#ffffff',
+                                  todayTextColor: isDarkMode ? '#ffffff' : '#3b6812',
+                                  dayTextColor: isDarkMode ? '#f8fafc' : '#111827',
+                                  textDisabledColor: isDarkMode ? '#808080' : '#6b7280',
+                                  textInactiveColor: isDarkMode ? '#808080' : '#6b7280',
+                                  textDayStyle: { color: isDarkMode ? '#f8fafc' : '#111827' },
+                                  arrowColor: isDarkMode ? 'hsl(83, 69%, 48%)' : '#4f46e5',
+                                  monthTextColor: isDarkMode ? '#f8fafc' : '#111827',
+                                  indicatorColor: '#4f46e5',
+                                  textDayFontWeight: '500',
+                                  textMonthFontWeight: 'bold',
+                                  textDayHeaderFontWeight: '600',
+                                  textDayFontSize: 13,
+                                  textMonthFontSize: 15,
+                                  textDayHeaderFontSize: 11,
+                            }}
+                      />
+                  </View>
+                </View>
+              </ScrollView>
+          </SafeAreaView>
         </View>
     );
 }
