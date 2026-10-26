@@ -64,7 +64,7 @@ export default function Contraseñas() {
             searchBorder: isDark ? '#475569' : '#cbd5e1',
             searchText: isDark ? '#f8fafc' : '#111827',
             cardBg: isDark ? '#1e293b' : '#ffffff',
-            cardText: isDark ? '#f8fafc' : '#111827',
+
             cardSubtext: isDark ? '#cbd5e1' : '#64748b',
             claveBg: isDark ? '#0f172a' : '#f1f5f9',
             claveText: isDark ? '#f8fafc' : '#1f2937',
@@ -289,7 +289,7 @@ export default function Contraseñas() {
                                     <View key={item.id} style={[styles.card, { backgroundColor: colors.cardBg }]}>
                                         <View style={styles.cardHeader}>
                                             <View style={{ flex: 1, marginRight: 8 }}>
-                                                <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
+                                                <Text style={[styles.nombreTexto, { color: colors.claveText }]}>
                                                     {item.nombre}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
