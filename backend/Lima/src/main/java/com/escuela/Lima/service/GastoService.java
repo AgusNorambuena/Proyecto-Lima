@@ -1,5 +1,7 @@
 package com.escuela.Lima.service;
 
+import com.escuela.Lima.dto.GastoRequestDto;
+import com.escuela.Lima.dto.GastoResponseDto;
 import com.escuela.Lima.model.Gasto;
 import com.escuela.Lima.model.User;
 import com.escuela.Lima.repository.GastoRepository;
@@ -8,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class GastoService {
@@ -18,20 +21,38 @@ public class GastoService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<Gasto> obtenerGastosPorUsuario(Long userId) {
-        return gastoRepository.findByUserId(userId);
+    private GastoResponseDto mapToDto(Gasto g) {
+        return new GastoResponseDto(
+                g.getId(),
+                g.getNombre(),
+                g.getPrecio(),
+                g.getFecha(),
+                g.getCategoria()
+        );
     }
 
-    public Gasto guardarGasto(Gasto gasto) {
-        if (gasto.getUser() == null || gasto.getUser().getId() == null) {
+    public List<GastoResponseDto> obtenerGastosPorUsuario(Long userId) {
+        return gastoRepository.findByUserId(userId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public GastoResponseDto guardarGasto(GastoRequestDto dto) {
+        if (dto.getUserId() == null) {
             throw new RuntimeException("El gasto debe estar asociado a un usuario válido.");
         }
 
-        // Buscar el usuario existente en la base de datos
-        User user = userRepository.findById(gasto.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + gasto.getUser().getId()));
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + dto.getUserId()));
 
+        Gasto gasto = new Gasto();
+        gasto.setNombre(dto.getNombre());
+        gasto.setPrecio(dto.getPrecio());
+        gasto.setFecha(dto.getFecha());
+        gasto.setCategoria(dto.getCategoria());
         gasto.setUser(user);
-        return gastoRepository.save(gasto);
+
+        Gasto saved = gastoRepository.save(gasto);
+        return mapToDto(saved);
     }
 }
