@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  Image, 
-  Pressable, 
-  useWindowDimensions, 
-  ScrollView, 
-  ImageBackground, 
-  Animated 
+import {
+  StyleSheet,
+  View,
+  Text,
+  Image,
+  Pressable,
+  useWindowDimensions,
+  ScrollView,
+  ImageBackground,
+  Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -186,15 +186,15 @@ export default function Inicio() {
 
   return (
     <View style={styles.Wrapper}>
-      <ImageBackground 
-        source={require('../assets/images/FondoLima.png')} 
+      <ImageBackground
+        source={require('../assets/images/FondoLima.png')}
         style={[StyleSheet.absoluteFill, { flex: 1 }]}
         resizeMode="cover"
       />
 
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
-        <ImageBackground 
-          source={require('../assets/images/FondoLimaOscuro.png')} 
+        <ImageBackground
+          source={require('../assets/images/FondoLimaOscuro.png')}
           style={{ flex: 1 }}
           resizeMode="cover"
         />
@@ -218,12 +218,12 @@ export default function Inicio() {
 
           <View style={styles.Seccion}>
             {/* SECCIÓN CONTRASEÑAS */}
-            <Link 
+            <Link
               href={{
                 pathname: "/contrasenas",
                 params: { userId: userId }
-              }} 
-              push 
+              }}
+              push
               asChild
             >
               <Pressable style={styles.Gestor}>
@@ -246,8 +246,8 @@ export default function Inicio() {
                   ultimasContraseñas.map((item) => {
                     const esVisible = visibles[item.id];
                     return (
-                      <Pressable 
-                        key={item.id} 
+                      <Pressable
+                        key={item.id}
                         style={styles.card}
                         onPress={() => router.push({
                           pathname: "/contrasenas",
@@ -274,17 +274,17 @@ export default function Inicio() {
                           <Text style={styles.claveTexto}>
                             {esVisible ? item.password : '••••••••••••'}
                           </Text>
-                          <Pressable 
+                          <Pressable
                             onPress={(e) => {
                               e.stopPropagation();
                               toggleVisibilidad(item.id);
-                            }} 
+                            }}
                             style={styles.ojoBtn}
                           >
-                            <Ionicons 
-                              name={esVisible ? "eye-off-outline" : "eye-outline"} 
-                              size={16} 
-                              color={isDarkMode ? "#9ca3af" : "#4b5563"} 
+                            <Ionicons
+                              name={esVisible ? "eye-off-outline" : "eye-outline"}
+                              size={16}
+                              color={isDarkMode ? "#9ca3af" : "#4b5563"}
                             />
                           </Pressable>
                         </View>
@@ -296,8 +296,8 @@ export default function Inicio() {
             </View>
 
             {/* SECCIÓN GASTOS */}
-            <Pressable 
-              style={styles.Gestor} 
+            <Pressable
+              style={styles.Gestor}
               onPress={() => router.push({
                 pathname: '../gastos',
                 params: { userId: userId }
@@ -307,7 +307,7 @@ export default function Inicio() {
             </Pressable>
 
             {/* TORTA DE GASTOS */}
-            <Pressable 
+            <Pressable
               style={styles.ContenidoGrafico}
               onPress={() => router.push({
                 pathname: '../gastos',
@@ -335,8 +335,8 @@ export default function Inicio() {
             </Pressable>
 
             {/* SECCIÓN AGENDA */}
-            <Pressable 
-              style={styles.Gestor} 
+            <Pressable
+              style={styles.Gestor}
               onPress={() => router.push({
                 pathname: '../agenda',
                 params: { userId: userId }
@@ -385,7 +385,7 @@ export default function Inicio() {
                           style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
                           numberOfLines={1}
                         >
-                          {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
+                          - {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
                         </Text>
                       )}
                     </Pressable>
@@ -571,7 +571,7 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
   },
   claveTexto: {
     fontSize: 13,
-    color: isDarkMode ? '#d1d5db' : '#374151',
+    color: isDarkMode ? '#d1d5db' : '#334151',
     fontFamily: 'monospace',
   },
   ojoBtn: {

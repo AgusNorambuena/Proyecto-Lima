@@ -370,7 +370,7 @@ export default function GastosScreen() {
                         <Text style={[styles.statsText, { color: colors.textSecondary }]}>• Insumos: ${totalInsumos}</Text>
                         <Text style={[styles.statsText, { color: colors.textSecondary }]}>• Extras: ${totalExtras}</Text>
 
-                        {totalGastos > 0 && (
+                        {totalGastos > 0 ? (
                             <View style={{ alignItems: 'center', marginTop: 15 }}>
                                 <PieChart
                                     data={dataPie}
@@ -385,6 +385,10 @@ export default function GastosScreen() {
                                     absolute
                                 />
                             </View>
+                        ) : (
+                            <Text style={[styles.vacioTexto, { color: colors.cardSubtext, marginTop: 10 }]}>
+                                Sin datos suficientes para mostrar la gráfica en este período.
+                            </Text>
                         )}
                     </View>
 
