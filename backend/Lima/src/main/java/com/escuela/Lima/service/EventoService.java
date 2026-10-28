@@ -1,5 +1,7 @@
 package com.escuela.Lima.service;
 
+import com.escuela.Lima.dto.EventoRequestDto;
+import com.escuela.Lima.dto.EventoResponseDto;
 import com.escuela.Lima.model.Evento;
 import com.escuela.Lima.model.User;
 import com.escuela.Lima.repository.EventoRepository;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EventoService {
@@ -20,41 +23,64 @@ public class EventoService {
         this.userRepository = userRepository;
     }
 
-    // 1. Guardar un evento vinculado al usuario
-    public Evento saveEvento(Long userId, Evento evento) {
+    private EventoResponseDto mapToDto(Evento e) {
+        return new EventoResponseDto(
+                e.getId(),
+                e.getTitulo(),
+                e.getFecha(),
+                e.getHora(),
+                e.getCompletado(),
+                e.getFechaCreacion()
+        );
+    }
+
+    // 1. Guardar un evento usando DTOs
+    public EventoResponseDto saveEvento(Long userId, EventoRequestDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
 
+        Evento evento = new Evento();
+        evento.setTitulo(dto.getTitulo());
+        evento.setFecha(dto.getFecha());
+        evento.setHora(dto.getHora());
+        evento.setCompletado(dto.getCompletado() != null ? dto.getCompletado() : false);
         evento.setUser(user);
-        return eventoRepository.save(evento);
+
+        Evento saved = eventoRepository.save(evento);
+        return mapToDto(saved);
     }
 
-    // 2. Obtener todos los eventos de un usuario
-    public List<Evento> getEventosByUserId(Long userId) {
-        return eventoRepository.findByUserId(userId);
+    // 2. Obtener todos los eventos mapeados a DTO
+    public List<EventoResponseDto> getEventosByUserId(Long userId) {
+        return eventoRepository.findByUserId(userId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 
-    // 3. Obtener eventos de un usuario por fecha específica
-    public List<Evento> getEventosByUserIdAndFecha(Long userId, LocalDate fecha) {
-        return eventoRepository.findByUserIdAndFecha(userId, fecha);
+    // 3. Obtener eventos por fecha mapeados a DTO
+    public List<EventoResponseDto> getEventosByUserIdAndFecha(Long userId, LocalDate fecha) {
+        return eventoRepository.findByUserIdAndFecha(userId, fecha).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 
-    // 4. Actualizar un evento validando al dueño
-    public Evento updateEvento(Long eventoId, Long userId, Evento eventoDetails) {
+    // 4. Actualizar evento usando DTOs
+    public EventoResponseDto updateEvento(Long eventoId, Long userId, EventoRequestDto dto) {
         Evento eventoExistente = eventoRepository.findByIdAndUserId(eventoId, userId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado o no pertenece al usuario."));
 
-        eventoExistente.setTitulo(eventoDetails.getTitulo());
-        eventoExistente.setFecha(eventoDetails.getFecha());
-        eventoExistente.setHora(eventoDetails.getHora());
-        if (eventoDetails.getCompletado() != null) {
-            eventoExistente.setCompletado(eventoDetails.getCompletado());
+        eventoExistente.setTitulo(dto.getTitulo());
+        eventoExistente.setFecha(dto.getFecha());
+        eventoExistente.setHora(dto.getHora());
+        if (dto.getCompletado() != null) {
+            eventoExistente.setCompletado(dto.getCompletado());
         }
 
-        return eventoRepository.save(eventoExistente);
+        Evento updated = eventoRepository.save(eventoExistente);
+        return mapToDto(updated);
     }
 
-    // 5. Eliminar un evento asegurando que pertenezca al usuario
+    // 5. Eliminar evento
     public void deleteEvento(Long eventoId, Long userId) {
         Evento evento = eventoRepository.findByIdAndUserId(eventoId, userId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado o no pertenece al usuario."));
