@@ -1,5 +1,8 @@
 package com.escuela.Lima.service;
 
+import com.escuela.Lima.dto.LoginRequestDto;
+import com.escuela.Lima.dto.RegisterRequestDto;
+import com.escuela.Lima.dto.UserResponseDto;
 import com.escuela.Lima.model.User;
 import com.escuela.Lima.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,24 +21,40 @@ public class UserService {
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    // Registrar un nuevo usuario con contraseña hasheada
-    public User registerUser(User user) {
-        // Verificar si el nombre de usuario ya existe
-        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
+    // Registrar un nuevo usuario con contraseña hasheada usando DTOs
+    public UserResponseDto registerUser(RegisterRequestDto dto) {
+        Optional<User> existingUser = userRepository.findByEmail(dto.getEmail());
         if (existingUser.isPresent()) {
-            throw new RuntimeException("El nombre de usuario ya está en uso.");
+            throw new RuntimeException("El correo electrónico ya está en uso.");
         }
 
-        // Hashear la contraseña antes de guardarla
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
+        User user = new User();
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setBiometricEnabled(dto.getBiometricEnabled() != null ? dto.getBiometricEnabled() : false);
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return new UserResponseDto(savedUser.getId(), savedUser.getEmail(), savedUser.getBiometricEnabled());
     }
 
-    // Buscar usuario por nombre de usuario (utilizado en el login)
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    // Autenticar usuario usando DTOs de login
+    public UserResponseDto login(LoginRequestDto dto) {
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado en la BD!"));
+
+        // Verificar si la contraseña ingresada coincide con el hash almacenado
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Contraseña incorrecta.");
+        }
+
+        // Devolvemos el DTO de respuesta limpio sin exponer la contraseña
+        return new UserResponseDto(user.getId(), user.getEmail(), user.getBiometricEnabled());
+    }
+
+    // Buscar usuario por correo y mapearlo a ResponseDto
+    public Optional<UserResponseDto> findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> new UserResponseDto(user.getId(), user.getEmail(), user.getBiometricEnabled()));
     }
 
     // Verificar si la contraseña ingresada coincide con la de la base de datos

@@ -1,6 +1,7 @@
 package com.escuela.Lima.controller;
 
-import com.escuela.Lima.model.Gasto;
+import com.escuela.Lima.dto.GastoRequestDto;
+import com.escuela.Lima.dto.GastoResponseDto;
 import com.escuela.Lima.service.GastoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,18 +19,14 @@ public class GastoController {
     private GastoService gastoService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Gasto>> obtenerGastosPorUsuario(@PathVariable Long userId) {
-        List<Gasto> gastos = gastoService.obtenerGastosPorUsuario(userId);
-        return ResponseEntity.ok(gastos);
+    public ResponseEntity<List<GastoResponseDto>> obtenerGastosPorUsuario(@PathVariable Long userId) {
+        List<GastoResponseDto> dtos = gastoService.obtenerGastosPorUsuario(userId);
+        return ResponseEntity.ok(dtos);
     }
 
     @PostMapping
-    public ResponseEntity<?> crearGasto(@RequestBody Gasto gasto) {
-        try {
-            Gasto nuevoGasto = gastoService.guardarGasto(gasto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoGasto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<GastoResponseDto> crearGasto(@RequestBody GastoRequestDto requestDto) {
+        GastoResponseDto nuevoGasto = gastoService.guardarGasto(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoGasto);
     }
 }
