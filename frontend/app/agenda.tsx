@@ -7,9 +7,7 @@ import {
   Pressable, 
   ScrollView, 
   ImageBackground, 
-  TextInput, 
   useWindowDimensions,
-    Modal,
     ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AppPopup, { useAppPopup } from './components/AppPopup';
+import AgendaEventModal from './components/AgendaEventModal';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -291,68 +290,20 @@ export default function AgendaScreen() {
 
                 </ScrollView>
             </SafeAreaView>
-            <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContenido, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={styles.modalHeader}>
-                            <View>
-                                <Text style={[styles.modalTitulo, { color: colors.text }]}>Nueva anotación</Text>
-                                <Text style={[styles.modalSubtitulo, { color: colors.muted }]}>Guarda algo para recordar</Text>
-                            </View>
-                            <Pressable onPress={() => setModalVisible(false)} accessibilityLabel="Cerrar">
-                                <Ionicons name="close" size={24} color={colors.muted} />
-                            </Pressable>
-                        </View>
-                        <TextInput
-                            autoFocus
-                            accessibilityLabel="Recuerdo o evento"
-                            style={[styles.inputEvento, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
-                            placeholder="¿Qué quieres recordar?"
-                            placeholderTextColor={colors.muted}
-                            value={nuevoEvento}
-                            onChangeText={setNuevoEvento}
-                            returnKeyType="done"
-                            onSubmitEditing={() => void guardarEventoAPI()}
-                        />
-                        <View style={styles.camposFechaHora}>
-                            <View style={styles.campoSecundario}>
-                                <Text style={[styles.labelCampo, { color: colors.muted }]}>FECHA</Text>
-                                <TextInput
-                                    style={[styles.inputSecundario, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
-                                    value={fechaSeleccionada}
-                                    onChangeText={setFechaSeleccionada}
-                                    placeholder="AAAA-MM-DD"
-                                    placeholderTextColor={colors.muted}
-                                    keyboardType="numbers-and-punctuation"
-                                />
-                            </View>
-                            <View style={styles.campoSecundario}>
-                                <Text style={[styles.labelCampo, { color: colors.muted }]}>HORA · OPCIONAL</Text>
-                                <TextInput
-                                    style={[styles.inputSecundario, { backgroundColor: colors.input, borderColor: colors.border, color: colors.text }]}
-                                    value={horaSeleccionada}
-                                    onChangeText={setHoraSeleccionada}
-                                    placeholder="HH:MM"
-                                    placeholderTextColor={colors.muted}
-                                    keyboardType="numbers-and-punctuation"
-                                />
-                            </View>
-                        </View>
-                        <Pressable
-                            style={[styles.btnGuardarEvento, { backgroundColor: colors.accent }, guardando && styles.botonDeshabilitado]}
-                            onPress={() => void guardarEventoAPI()}
-                            disabled={guardando}
-                        >
-                            {guardando ? <ActivityIndicator color={isDarkMode ? '#17210c' : '#ffffff'} /> : (
-                                <>
-                                    <Ionicons name="checkmark" size={20} color={isDarkMode ? '#17210c' : '#ffffff'} />
-                                    <Text style={[styles.btnGuardarTexto, { color: isDarkMode ? '#17210c' : '#ffffff' }]}>Guardar anotación</Text>
-                                </>
-                            )}
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <AgendaEventModal
+                visible={modalVisible}
+                isDarkMode={isDarkMode}
+                colors={colors}
+                evento={nuevoEvento}
+                fecha={fechaSeleccionada}
+                hora={horaSeleccionada}
+                guardando={guardando}
+                onChangeEvento={setNuevoEvento}
+                onChangeFecha={setFechaSeleccionada}
+                onChangeHora={setHoraSeleccionada}
+                onClose={() => setModalVisible(false)}
+                onSave={() => void guardarEventoAPI()}
+            />
             <AppPopup popup={popup} onDismiss={dismissPopup} />
         </View>
     );
@@ -516,78 +467,5 @@ const styles = StyleSheet.create({
     eventoItemFecha: {
         fontSize: 12,
         fontWeight: '600',
-    },
-    inputEvento: {
-        borderRadius: 8,
-        paddingHorizontal: 15,
-        paddingVertical: 14,
-        fontSize: 15,
-        borderWidth: 1,
-    },
-    btnGuardarEvento: {
-        marginTop: 10,
-        minHeight: 48,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        gap: 8,
-    },
-    btnGuardarTexto: {
-        fontWeight: 'bold',
-        fontSize: 15,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: 'rgba(11, 18, 28, 0.62)',
-    },
-    modalContenido: {
-        width: '100%',
-        maxWidth: 440,
-        alignSelf: 'center',
-        padding: 20,
-        borderWidth: 1,
-        borderRadius: 12,
-        elevation: 12,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 18,
-    },
-    modalTitulo: {
-        fontSize: 20,
-        fontWeight: '800',
-    },
-    modalSubtitulo: {
-        marginTop: 4,
-        fontSize: 13,
-    },
-    camposFechaHora: {
-        flexDirection: 'row',
-        gap: 10,
-        marginTop: 14,
-    },
-    campoSecundario: {
-        flex: 1,
-    },
-    labelCampo: {
-        marginBottom: 6,
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    inputSecundario: {
-        minHeight: 46,
-        paddingHorizontal: 10,
-        borderWidth: 1,
-        borderRadius: 8,
-        fontSize: 13,
-    },
-    botonDeshabilitado: {
-        opacity: 0.7,
     },
 });

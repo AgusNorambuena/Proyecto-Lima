@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   ScrollView, 
-  TextInput, 
   Pressable, 
   ImageBackground,
   Modal,
@@ -19,6 +18,7 @@ import { PieChart } from 'react-native-chart-kit';
 import AppPopup, { useAppPopup } from './components/AppPopup';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
+import GastoFormModals from './components/GastoFormModals';
 
 interface Gasto {
   id: number;
@@ -397,76 +397,23 @@ export default function GastosScreen() {
                     </View>
 
                     {/* Modal para Crear Gasto */}
-                    <Modal
-                        animationType="slide"
-                        transparent={true}
-                        visible={modalVisible}
-                        onRequestClose={() => setModalVisible(false)}
-                    >
-                        <View style={styles.modalBg}>
-                            <View style={[styles.modalCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
-                                <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
-                                    Registrar Nuevo Gasto
-                                </Text>
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Concepto / Nombre:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: Luz, Internet, Compra..."
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    value={nuevoNombre}
-                                    onChangeText={setNuevoNombre}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Precio ($):</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="0.00"
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    keyboardType="numeric"
-                                    value={nuevoPrecio}
-                                    onChangeText={setNuevoPrecio}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha (YYYY-MM-DD):</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder={fechaActual}
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    value={nuevaFecha}
-                                    onChangeText={setNuevaFecha}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría:</Text>
-                                <Pressable
-                                    accessibilityRole="button"
-                                    onPress={() => setCategoriaModalVisible(true)}
-                                    style={[styles.categorySelector, { borderColor: colors.searchBorder, backgroundColor: isDark ? '#111827' : '#ffffff' }]}
-                                >
-                                    <Text style={{ color: isDark ? '#f8fafc' : '#17211a', fontSize: 15 }}>
-                                        {categoriasGasto.find((categoria) => categoria.value === nuevaCategoria)?.label}
-                                    </Text>
-                                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                                </Pressable>
-
-                                <View style={styles.modalAcciones}>
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: isDark ? '#334155' : '#e5e7eb' }]}
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Text style={{ color: isDark ? '#f8fafc' : '#374151', fontWeight: '600' }}>Cancelar</Text>
-                                    </Pressable>
-
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: '#4f46e5' }]} 
-                                        onPress={guardarNuevoGasto}
-                                    >
-                                        <Text style={{ color: '#ffffff', fontWeight: '600' }}>Guardar</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        </View>
-                    </Modal>
+                    <GastoFormModals
+                        modalVisible={modalVisible}
+                        isDarkMode={isDark}
+                        colors={colors}
+                        fechaActual={fechaActual}
+                        nombre={nuevoNombre}
+                        precio={nuevoPrecio}
+                        fecha={nuevaFecha}
+                        categoria={nuevaCategoria}
+                        categorias={categoriasGasto}
+                        onChangeNombre={setNuevoNombre}
+                        onChangePrecio={setNuevoPrecio}
+                        onChangeFecha={setNuevaFecha}
+                        onSave={guardarNuevoGasto}
+                        onClose={() => setModalVisible(false)}
+                        onOpenCategorias={() => setCategoriaModalVisible(true)}
+                    />
 
                     <Modal
                         animationType="fade"

@@ -6,7 +6,6 @@ import {
   TextInput, 
   Pressable, 
   ImageBackground,
-  Modal,
   ActivityIndicator,
   Clipboard,
   StyleSheet
@@ -15,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import MenuContraseñas from './components/menuContasenas';
+import PasswordFormModal from './components/PasswordFormModal';
 import AppPopup, { useAppPopup } from './components/AppPopup';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
@@ -344,87 +344,21 @@ export default function Contraseñas() {
                     </ImageBackground>
 
                     {/* Modal con Formulario */}
-                    <Modal
-                        animationType="slide"
-                        transparent={true}
+                    <PasswordFormModal
                         visible={modalVisible}
-                        onRequestClose={() => setModalVisible(false)}
-                    >
-                        <View style={styles.modalBg}>
-                            <View style={[styles.modalCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
-                                <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
-                                    Nueva Contraseña
-                                </Text>
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Aplicación / Servicio:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: Spotify, Facebook..."
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    value={nuevoNombre}
-                                    onChangeText={setNuevoNombre}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Email / Usuario:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: usuario@gmail.com"
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    value={nuevoUsuario}
-                                    onChangeText={setNuevoUsuario}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Contraseña:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="••••••••••••"
-                                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                    secureTextEntry
-                                    value={nuevaClave}
-                                    onChangeText={setNuevaClave}
-                                />
-
-                                <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría:</Text>
-                                <View style={styles.opcionesCategorias}>
-                                    {['Contraseñas Personales', 'Trabajo y Servidores', 'Redes Sociales'].map((cat) => (
-                                        <Pressable
-                                            key={cat}
-                                            style={[
-                                                styles.chipCategoria,
-                                                nuevaCategoria === cat && styles.chipCategoriaActivo
-                                            ]}
-                                            onPress={() => setNuevaCategoria(cat)}
-                                        >
-                                            <Text style={[
-                                                styles.chipTexto,
-                                                nuevaCategoria === cat && styles.chipTextoActivo
-                                            ]}>
-                                                {cat}
-                                            </Text>
-                                        </Pressable>
-                                    ))}
-                                </View>
-
-                                <View style={styles.modalAcciones}>
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: isDark ? '#334155' : '#e5e7eb' }]}
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Text style={{ color: isDark ? '#f8fafc' : '#374151', fontWeight: '600' }}>Cancelar</Text>
-                                    </Pressable>
-
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: '#4f46e5' }]} 
-                                        onPress={guardarNuevaContraseña}
-                                    >
-                                        <Text style={{ color: '#ffffff', fontWeight: '600' }}>Guardar</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        </View>
-                    </Modal>
+                        isDarkMode={isDark}
+                        colors={colors}
+                        nombre={nuevoNombre}
+                        usuario={nuevoUsuario}
+                        password={nuevaClave}
+                        categoria={nuevaCategoria}
+                        onChangeNombre={setNuevoNombre}
+                        onChangeUsuario={setNuevoUsuario}
+                        onChangePassword={setNuevaClave}
+                        onChangeCategoria={setNuevaCategoria}
+                        onClose={() => setModalVisible(false)}
+                        onSave={guardarNuevaContraseña}
+                    />
 
                 </ScrollView>
             </ImageBackground>
@@ -556,72 +490,5 @@ const styles = StyleSheet.create({
   },
   accionBtn: {
     padding: 2,
-  },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalCard: {
-    borderRadius: 12,
-    padding: 20,
-    elevation: 5,
-  },
-  modalTitulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 10,
-    marginBottom: 4,
-    color: '#6b7280',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 15,
-  },
-  opcionesCategorias: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-    marginBottom: 15,
-  },
-  chipCategoria: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#9ca3af',
-  },
-  chipCategoriaActivo: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
-  },
-  chipTexto: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  chipTextoActivo: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  modalAcciones: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 10,
-  },
-  btnModal: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
   },
 });
