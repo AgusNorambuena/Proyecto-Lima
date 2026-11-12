@@ -10,5 +10,4 @@ import lombok.NoArgsConstructor;
 public class RegisterRequestDto {
     private String email;
     private String password;
-    private Boolean biometricEnabled;
 }

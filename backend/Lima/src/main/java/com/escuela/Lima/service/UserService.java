@@ -21,7 +21,6 @@ public class UserService {
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    // Registrar un nuevo usuario con contraseña hasheada usando DTOs
     public UserResponseDto registerUser(RegisterRequestDto dto) {
         Optional<User> existingUser = userRepository.findByEmail(dto.getEmail());
         if (existingUser.isPresent()) {
@@ -31,34 +30,20 @@ public class UserService {
         User user = new User();
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setBiometricEnabled(dto.getBiometricEnabled() != null ? dto.getBiometricEnabled() : false);
+        user.setBiometricEnabled(false);
 
         User savedUser = userRepository.save(user);
         return new UserResponseDto(savedUser.getId(), savedUser.getEmail(), savedUser.getBiometricEnabled());
     }
 
-    // Autenticar usuario usando DTOs de login
     public UserResponseDto login(LoginRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado en la BD!"));
 
-        // Verificar si la contraseña ingresada coincide con el hash almacenado
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new RuntimeException("Contraseña incorrecta.");
         }
 
-        // Devolvemos el DTO de respuesta limpio sin exponer la contraseña
         return new UserResponseDto(user.getId(), user.getEmail(), user.getBiometricEnabled());
-    }
-
-    // Buscar usuario por correo y mapearlo a ResponseDto
-    public Optional<UserResponseDto> findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(user -> new UserResponseDto(user.getId(), user.getEmail(), user.getBiometricEnabled()));
-    }
-
-    // Verificar si la contraseña ingresada coincide con la de la base de datos
-    public boolean verificarPassword(String rawPassword, String encodedPassword) {
-        return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 }

@@ -8,8 +8,7 @@ import {
   useWindowDimensions,
   ScrollView,
   ImageBackground,
-  Animated,
-  Alert
+  Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, Link, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { PieChart } from 'react-native-chart-kit';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -57,6 +57,7 @@ export default function Inicio() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { userId } = useLocalSearchParams();
+  const { popup, showPopup, dismissPopup } = useAppPopup();
 
   const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
   const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
@@ -147,20 +148,15 @@ export default function Inicio() {
   };
 
   const handleCerrarSesion = () => {
-    Alert.alert(
-      "Cerrar Sesión",
-      "¿Estás seguro de que deseas salir?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sí, salir", 
-          style: "destructive",
-          onPress: () => {
-            router.replace('/');
-          }
-        }
-      ]
-    );
+    showPopup({
+      title: 'Cerrar sesión',
+      message: '¿Estás seguro de que deseas salir de tu cuenta?',
+      tone: 'confirm',
+      actions: [
+        { label: 'Cancelar', variant: 'secondary' },
+        { label: 'Sí, salir', variant: 'danger', onPress: () => router.replace('/') },
+      ],
+    });
   };
 
   // Cálculo de totales para la gráfica
@@ -438,6 +434,7 @@ export default function Inicio() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <AppPopup popup={popup} onDismiss={dismissPopup} />
     </View>
   );
 }

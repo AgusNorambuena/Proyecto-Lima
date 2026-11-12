@@ -32,18 +32,22 @@ public class GastoService {
     }
 
     public List<GastoResponseDto> obtenerGastosPorUsuario(Long userId) {
+        if (userId == null) {
+            throw new RuntimeException("El ID de usuario no puede ser nulo.");
+        }
         return gastoRepository.findByUserId(userId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public GastoResponseDto guardarGasto(GastoRequestDto dto) {
-        if (dto.getUserId() == null) {
+        if (dto == null || dto.getUserId() == null) {
             throw new RuntimeException("El gasto debe estar asociado a un usuario válido.");
         }
 
+        // Buscamos el usuario en la base de datos de forma segura
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + dto.getUserId()));
+                .orElseThrow(() -> new RuntimeException("El gasto debe estar asociado a un usuario válido. (ID no encontrado: " + dto.getUserId() + ")"));
 
         Gasto gasto = new Gasto();
         gasto.setNombre(dto.getNombre());
