@@ -16,6 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, Link, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { PieChart } from 'react-native-chart-kit';
+import AppPopup, { useAppPopup } from './components/AppPopup';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -56,6 +57,7 @@ export default function Inicio() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { userId } = useLocalSearchParams();
+  const { popup, showPopup, dismissPopup } = useAppPopup();
 
   const [ultimasContraseñas, setUltimasContraseñas] = useState<Credencial[]>([]);
   const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
@@ -145,6 +147,18 @@ export default function Inicio() {
     setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleCerrarSesion = () => {
+    showPopup({
+      title: 'Cerrar sesión',
+      message: '¿Estás seguro de que deseas salir de tu cuenta?',
+      tone: 'confirm',
+      actions: [
+        { label: 'Cancelar', variant: 'secondary' },
+        { label: 'Sí, salir', variant: 'danger', onPress: () => router.replace('/') },
+      ],
+    });
+  };
+
   // Cálculo de totales para la gráfica
   const totalServicios = gastos
     .filter((g) => g.categoria === 'SERVICIOS')
@@ -206,6 +220,9 @@ export default function Inicio() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.ModosContainer}>
             <ThemeToggle />
+            <Pressable onPress={handleCerrarSesion} style={styles.BotonLogout}>
+              <Ionicons name="log-out-outline" size={24} color={isDarkMode ? "#ef4444" : "#dc2626"} />
+            </Pressable>
           </View>
 
           <View style={styles.LogoContainer}>
@@ -385,7 +402,7 @@ export default function Inicio() {
                           style={[styles.nombreEventoDia, seleccionado && styles.nombreEventoDiaSeleccionado]}
                           numberOfLines={1}
                         >
-                          - {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
+                          {nombresEventos[0]}{nombresEventos.length > 1 ? ` +${nombresEventos.length - 1}` : ''}
                         </Text>
                       )}
                     </Pressable>
@@ -417,6 +434,7 @@ export default function Inicio() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <AppPopup popup={popup} onDismiss={dismissPopup} />
     </View>
   );
 }
@@ -435,9 +453,22 @@ const Styles = (width: number, isDarkMode: boolean) => StyleSheet.create({
     paddingBottom: 110,
   },
   ModosContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     marginTop: 10,
     zIndex: 10,
+  },
+  BotonLogout: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#17212b' : 'rgba(255, 255, 255, 0.9)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   LogoContainer: {
     alignItems: "center",

@@ -30,6 +30,11 @@ interface Gasto {
 
 const screenWidth = Dimensions.get('window').width;
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const categoriasGasto = [
+    { value: 'SERVICIOS', label: 'Servicios', icon: 'flash-outline' },
+    { value: 'INSUMOS', label: 'Insumos', icon: 'cube-outline' },
+    { value: 'EXTRAS', label: 'Extras', icon: 'sparkles-outline' },
+] as const;
 
 export default function GastosScreen() {
     const { userId } = useLocalSearchParams();
@@ -46,6 +51,7 @@ export default function GastosScreen() {
 
     // Estados para el Modal de Nuevo Gasto
     const [modalVisible, setModalVisible] = useState(false);
+    const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
     const [nuevoNombre, setNuevoNombre] = useState('');
     const [nuevoPrecio, setNuevoPrecio] = useState('');
     const [nuevaFecha, setNuevaFecha] = useState(fechaActual);
@@ -135,9 +141,7 @@ export default function GastosScreen() {
             precio: parseFloat(nuevoPrecio),
             fecha: fechaFinal,
             categoria: nuevaCategoria,
-            user: {
-                id: Number(userId)
-            }
+            userId: Number(userId)
         };
 
         try {
@@ -434,18 +438,16 @@ export default function GastosScreen() {
                                 />
 
                                 <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría:</Text>
-                                <View style={[styles.modalInput, { padding: 0, borderColor: colors.searchBorder }]}>
-                                    <Picker
-                                        selectedValue={nuevaCategoria}
-                                        onValueChange={(itemValue) => setNuevaCategoria(itemValue)}
-                                        style={{ color: isDark ? '#fff' : '#000' }}
-                                        dropdownIconColor={isDark ? '#fff' : '#000'}
-                                    >
-                                        <Picker.Item label="Servicios" value="SERVICIOS" color={isDark ? '#000' : '#000'} />
-                                        <Picker.Item label="Insumos" value="INSUMOS" color={isDark ? '#000' : '#000'} />
-                                        <Picker.Item label="Extras" value="EXTRAS" color={isDark ? '#000' : '#000'} />
-                                    </Picker>
-                                </View>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => setCategoriaModalVisible(true)}
+                                    style={[styles.categorySelector, { borderColor: colors.searchBorder, backgroundColor: isDark ? '#111827' : '#ffffff' }]}
+                                >
+                                    <Text style={{ color: isDark ? '#f8fafc' : '#17211a', fontSize: 15 }}>
+                                        {categoriasGasto.find((categoria) => categoria.value === nuevaCategoria)?.label}
+                                    </Text>
+                                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                                </Pressable>
 
                                 <View style={styles.modalAcciones}>
                                     <Pressable 
@@ -462,6 +464,62 @@ export default function GastosScreen() {
                                         <Text style={{ color: '#ffffff', fontWeight: '600' }}>Guardar</Text>
                                     </Pressable>
                                 </View>
+                            </View>
+                        </View>
+                    </Modal>
+
+                    <Modal
+                        animationType="fade"
+                        transparent
+                        visible={categoriaModalVisible}
+                        onRequestClose={() => setCategoriaModalVisible(false)}
+                        statusBarTranslucent
+                    >
+                        <View style={styles.modalBg}>
+                            <Pressable
+                                style={StyleSheet.absoluteFill}
+                                onPress={() => setCategoriaModalVisible(false)}
+                                accessibilityLabel="Cerrar categorías"
+                            />
+                            <View style={[styles.categoryModalCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
+                                <View style={styles.categoryModalHeader}>
+                                    <View>
+                                        <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#17211a', marginBottom: 2 }]}>
+                                            Categoría
+                                        </Text>
+                                        <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                                            Elegí el tipo de gasto
+                                        </Text>
+                                    </View>
+                                    <Pressable onPress={() => setCategoriaModalVisible(false)} accessibilityLabel="Cerrar">
+                                        <Ionicons name="close" size={23} color={colors.textSecondary} />
+                                    </Pressable>
+                                </View>
+                                {categoriasGasto.map((categoria) => {
+                                    const seleccionada = nuevaCategoria === categoria.value;
+                                    return (
+                                        <Pressable
+                                            key={categoria.value}
+                                            accessibilityRole="button"
+                                            onPress={() => {
+                                                setNuevaCategoria(categoria.value);
+                                                setCategoriaModalVisible(false);
+                                            }}
+                                            style={[
+                                                styles.categoryOption,
+                                                { backgroundColor: seleccionada ? (isDark ? '#334155' : '#f1f7e7') : (isDark ? '#111827' : '#f8fafc') },
+                                            ]}
+                                        >
+                                            <View style={styles.categoryOptionLabel}>
+                                                <Ionicons name={categoria.icon} size={20} color={seleccionada ? '#6d9418' : colors.textSecondary} />
+                                                <Text style={{ color: isDark ? '#f8fafc' : '#17211a', fontSize: 16, fontWeight: seleccionada ? '700' : '500' }}>
+                                                    {categoria.label}
+                                                </Text>
+                                            </View>
+                                            {seleccionada && <Ionicons name="checkmark-circle" size={21} color="#7da91d" />}
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
                         </View>
                     </Modal>
@@ -670,6 +728,43 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 15,
   },
+    categorySelector: {
+        minHeight: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+    },
+    categoryModalCard: {
+        width: '100%',
+        maxWidth: 420,
+        alignSelf: 'center',
+        borderRadius: 16,
+        padding: 20,
+        elevation: 8,
+    },
+    categoryModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    categoryOption: {
+        minHeight: 54,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        marginTop: 8,
+    },
+    categoryOptionLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
   modalAcciones: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
