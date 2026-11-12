@@ -1,7 +1,8 @@
 package com.escuela.Lima.controller;
 
-import com.escuela.Lima.model.Password;
-import com.escuela.Lima.repository.PasswordRepository;
+import com.escuela.Lima.dto.PasswordRequestDto;
+import com.escuela.Lima.dto.PasswordResponseDto;
+import com.escuela.Lima.service.PasswordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,62 +10,40 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/Passwords")
+@RequestMapping("/api/passwords")
 @CrossOrigin(origins = "*")
 public class PasswordController {
 
-    private final PasswordRepository repository;
+    private final PasswordService passwordService;
 
-    public PasswordController(PasswordRepository repository) {
-        this.repository = repository;
+    public PasswordController(PasswordService passwordService) {
+        this.passwordService = passwordService;
     }
 
-    // CREATE
-    @PostMapping
-    public ResponseEntity<Password> crear(@RequestBody Password password) {
-        password.setId(null);
-        Password guardada = repository.save(password);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PasswordResponseDto>> getPasswordsByUserId(@PathVariable Long userId) {
+        List<PasswordResponseDto> passwords = passwordService.getPasswordsByUserId(userId);
+        return ResponseEntity.ok(passwords);
     }
 
-    // READ - todas
-    @GetMapping
-    public List<Password> listar() {
-        return repository.findAll();
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<PasswordResponseDto> createPassword(@PathVariable Long userId, @RequestBody PasswordRequestDto requestDto) {
+        PasswordResponseDto nueva = passwordService.savePassword(userId, requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nueva);
     }
 
-    // READ - una
-    @GetMapping("/{id}")
-    public ResponseEntity<Password> obtener(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("/{passwordId}/user/{userId}")
+    public ResponseEntity<PasswordResponseDto> updatePassword(
+            @PathVariable Long passwordId,
+            @PathVariable Long userId,
+            @RequestBody PasswordRequestDto requestDto) {
+        PasswordResponseDto actualizada = passwordService.updatePassword(passwordId, userId, requestDto);
+        return ResponseEntity.ok(actualizada);
     }
 
-    // UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<Password> actualizar(@PathVariable Long id,
-                                               @RequestBody Password datos) {
-        return repository.findById(id)
-                .map(existente -> {
-                    existente.setTitulo(datos.getTitulo());
-                    existente.setUsuarioCuenta(datos.getUsuarioCuenta());
-                    existente.setPassword(datos.getPassword());
-                    existente.setCategoria(datos.getCategoria());
-                    existente.setUrl(datos.getUrl());
-                    existente.setNotas(datos.getNotas());
-                    return ResponseEntity.ok(repository.save(existente));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        repository.deleteById(id);
+    @DeleteMapping("/{passwordId}/user/{userId}")
+    public ResponseEntity<Void> deletePassword(@PathVariable Long passwordId, @PathVariable Long userId) {
+        passwordService.deletePassword(passwordId, userId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -21,9 +21,11 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password; // Contraseña hasheada
+    private String password;
+
+    @Column(name = "biometric_enabled")
+    private Boolean biometricEnabled = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Password> passwords;
-
 }

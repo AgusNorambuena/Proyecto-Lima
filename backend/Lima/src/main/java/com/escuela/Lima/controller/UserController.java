@@ -1,12 +1,16 @@
 package com.escuela.Lima.controller;
 
-import com.escuela.Lima.model.User;
+import com.escuela.Lima.dto.LoginRequestDto;
+import com.escuela.Lima.dto.RegisterRequestDto;
+import com.escuela.Lima.dto.UserResponseDto;
 import com.escuela.Lima.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -15,16 +19,19 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Endpoint para registrarse: POST /api/users/register
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<UserResponseDto> registerUser(@RequestBody RegisterRequestDto requestDto) {
+        UserResponseDto nuevoUsuario = userService.registerUser(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody LoginRequestDto loginRequest) {
         try {
-            User newUser = userService.registerUser(user);
-            // Por seguridad, limpiamos la contraseña antes de devolver la respuesta
-            newUser.setPassword(null);
-            return ResponseEntity.ok(newUser);
+            UserResponseDto userResponse = userService.login(loginRequest);
+            return ResponseEntity.ok(userResponse);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 }

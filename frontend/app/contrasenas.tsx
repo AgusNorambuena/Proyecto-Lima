@@ -1,81 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, 
   View, 
   Text, 
   ScrollView, 
   TextInput, 
   Pressable, 
-  useColorScheme,
   ImageBackground,
-  Modal,
-  Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Clipboard,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useLocalSearchParams } from 'expo-router';
 import MenuContraseñas from './components/menuContasenas';
+import PasswordFormModal from './components/PasswordFormModal';
+import AppPopup, { useAppPopup } from './components/AppPopup';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface Credencial {
   id: number;          
-  titulo: string;        
   nombre: string;
   usuarioCuenta: string; 
   password: string;      
   categoria: string;
 }
 
-// Cambia esta URL por la dirección real de tu API backend
-const API_URL = 'idtucasa:8080/api/Passwords'; // <-- Pon tu IP aquí
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Contraseñas() {
+    const { userId } = useLocalSearchParams();
+    const { popup, showPopup, dismissPopup } = useAppPopup();
+    const { isDarkMode } = useTheme();
+
     const [texto, setTexto] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas las contraseñas');
     const [visibles, setVisibles] = useState<{ [key: number]: boolean }>({});
 
-    // Estado para manejar dinámicamente el listado de contraseñas y control de carga
     const [listaContraseñas, setListaContraseñas] = useState<Credencial[]>([]);
     const [cargando, setCargando] = useState(false);
 
-    // Estados para controlar la visibilidad del modal y los datos del formulario
     const [modalVisible, setModalVisible] = useState(false);
-    const [nuevoTitulo, setNuevoTitulo] = useState('');
     const [nuevoNombre, setNuevoNombre] = useState('');
     const [nuevoUsuario, setNuevoUsuario] = useState('');
     const [nuevaClave, setNuevaClave] = useState('');
     const [nuevaCategoria, setNuevaCategoria] = useState('Contraseñas Personales');
 
-    const colorScheme = useColorScheme(); 
-    const isDark = colorScheme === 'dark';
+        const isDark = isDarkMode;
 
     const fondoPantalla = isDark 
-      ? require('../assets/images/FondoLima.png') 
-      : require('../assets/images/FondoLimaOscuro.png');
+            ? require('../assets/images/FondoLimaOscuro.png')
+            : require('../assets/images/FondoLima.png');
 
     const fondoEncuadre = isDark 
-      ? require('../assets/images/FondoLimaOscuro.png') 
-      : require('../assets/images/FondoLima.png');
+            ? require('../assets/images/FondoLima.png')
+            : require('../assets/images/FondoLimaOscuro.png');
 
     const colors = {
-      textPrimary: isDark ? '#3f3692' : '#ffffff',
-      textSecondary: isDark ? '#272f5e' : '#4b5563',
-      searchBg: isDark ? 'rgba(30, 30, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-      searchBorder: isDark ? '#333333' : '#ccc',
-      searchText: isDark ? '#ffffff' : '#000000',
-      cardBg: isDark ? '#ffffff' : '#1e1e1e',
-      cardText: isDark ? '#111827' : '#ffffff',
-      cardSubtext: isDark ? '#6b7280' : '#a1a1aa',
-      claveBg: isDark ? '#f9fafb' : '#2a2a2a',
-      claveText: isDark ? '#374151' : '#f3f4f6',
-      badgeBg: isDark ? '#f3f4f6' : '#333333',
-      badgeText: isDark ? '#4b5563' : '#d1d5db',
+            textPrimary: isDark ? '#f8fafc' : '#17211a',
+            textSecondary: isDark ? '#cbd5e1' : '#475569',
+            searchBg: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.92)',
+            searchBorder: isDark ? '#475569' : '#cbd5e1',
+            searchText: isDark ? '#f8fafc' : '#111827',
+            cardBg: isDark ? '#1e293b' : '#ffffff',
+
+            cardSubtext: isDark ? '#cbd5e1' : '#64748b',
+            claveBg: isDark ? '#0f172a' : '#f1f5f9',
+            claveText: isDark ? '#f8fafc' : '#1f2937',
+            badgeBg: isDark ? '#334155' : '#e2e8f0',
+            badgeText: isDark ? '#e2e8f0' : '#475569',
     };
 
-// === API: Obtener listado de contraseñas al cargar el componente ===
     const obtenerContraseñasAPI = async () => {
+        if (!userId) return;
         try {
             setCargando(true);
-            const response = await fetch(API_URL, {
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ export default function Contraseñas() {
             setListaContraseñas(data);
         } catch (error) {
             console.error(error);
-            Alert.alert('Error de conexión', 'No se pudo conectar con la API para cargar las contraseñas.');
+            showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con la API para cargar las contraseñas.', tone: 'error' });
         } finally {
             setCargando(false);
         }
@@ -100,73 +101,100 @@ export default function Contraseñas() {
 
     useEffect(() => {
         obtenerContraseñasAPI();
-    }, []);
+    }, [userId]);
 
     const toggleVisibilidad = (id: number) => {
         setVisibles((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
-    // === AGREGADO 3: Función para validar y agregar la nueva contraseña ===
-    const guardarNuevaContraseña = async () => {
-    if (!nuevoTitulo.trim() || !nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
-        Alert.alert('Campos incompletos', 'Por favor completa todos los campos requeridos.');
-        return;
-    }
-
-    // Mapeo exacto según el modelo de Java (Password.java)
-    const objetoEnviar = {
-        titulo: nuevoTitulo,
-        nombre: nuevoNombre,
-        usuarioCuenta: nuevoUsuario,
-        password: nuevaClave,
-        categoria: nuevaCategoria,
+    // FUNCIÓN PARA COPIAR LA CONTRASEÑA EXACTA AL PORTAPAPELES
+    const copiarAlPortapapeles = (password: string) => {
+        Clipboard.setString(password);
     };
 
-    try {
-        setCargando(true);
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(objetoEnviar),
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al guardar en el servidor');
+    const guardarNuevaContraseña = async () => {
+        if (!nuevoNombre.trim() || !nuevoUsuario.trim() || !nuevaClave.trim()) {
+            showPopup({ title: 'Campos incompletos', message: 'Por favor completa todos los campos requeridos.', tone: 'info' });
+            return;
         }
 
-        // Recibimos el objeto guardado con su ID real generado por el backend
-        const nuevaCredencialGuardada: Credencial = await response.json();
+        const objetoEnviar = {
+            nombre: nuevoNombre,
+            usuarioCuenta: nuevoUsuario,
+            password: nuevaClave,
+            categoria: nuevaCategoria,
+        };
 
-        // Actualizamos el estado con la respuesta del backend
-        setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
+        try {
+            setCargando(true);
+            const response = await fetch(`${API_BASE_URL}/api/passwords/user/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(objetoEnviar),
+            });
 
-        // Reseteamos el formulario y cerramos el modal
-        setNuevoTitulo('');
-        setNuevoNombre('');
-        setNuevoUsuario('');
-        setNuevaClave('');
-        setNuevaCategoria('Contraseñas Personales');
-        setModalVisible(false);
+            if (!response.ok) {
+                throw new Error('Error al guardar en el servidor');
+            }
 
-        Alert.alert('Éxito', 'Contraseña guardada correctamente.');
-    } catch (error) {
-        console.error(error);
-        Alert.alert('Error', 'No se pudo guardar la contraseña en la base de datos.');
-    } finally {
-        setCargando(false);
-    }
-};
+            const nuevaCredencialGuardada: Credencial = await response.json();
 
-    // Filtro corregido extrayendo propiedades de `item`
+            setListaContraseñas((prev) => [nuevaCredencialGuardada, ...prev]);
+
+            setNuevoNombre('');
+            setNuevoUsuario('');
+            setNuevaClave('');
+            setNuevaCategoria('Contraseñas Personales');
+            setModalVisible(false);
+
+            showPopup({ title: 'Éxito', message: 'Contraseña guardada correctamente.', tone: 'success' });
+        } catch (error) {
+            console.error(error);
+            showPopup({ title: 'Error', message: 'No se pudo guardar la contraseña en la base de datos.', tone: 'error' });
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const eliminarContraseñaAPI = (passwordId: number) => {
+        showPopup({
+            title: 'Eliminar Contraseña',
+            message: '¿Estás seguro de que deseas eliminar esta contraseña de forma permanente?',
+            tone: 'confirm',
+            actions: [
+                { label: 'Cancelar', variant: 'secondary', onPress: dismissPopup },
+                {
+                    label: 'Eliminar',
+                    variant: 'danger',
+                    onPress: async () => {
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/api/passwords/${passwordId}/user/${userId}`, {
+                                method: 'DELETE',
+                            });
+
+                            if (response.ok) {
+                                setListaContraseñas((prev) => prev.filter(item => item.id !== passwordId));
+                                showPopup({ title: 'Éxito', message: 'Contraseña eliminada correctamente.', tone: 'success' });
+                            } else {
+                                showPopup({ title: 'Error', message: 'No se pudo eliminar la contraseña en el servidor.', tone: 'error' });
+                            }
+                        } catch (error) {
+                            console.error("Error al eliminar:", error);
+                            showPopup({ title: 'Error de conexión', message: 'No se pudo conectar con el servidor.', tone: 'error' });
+                        }
+                    }
+                }
+            ],
+        });
+    };
+
     const contraseñasFiltradas = listaContraseñas.filter((item) => {
-        const tituloVal = item.titulo || '';
         const nombreVal = item.nombre || '';
         const usuarioVal = item.usuarioCuenta || '';
 
         const coincideTexto = 
-            tituloVal.toLowerCase().includes(texto.toLowerCase()) ||
             nombreVal.toLowerCase().includes(texto.toLowerCase()) ||
             usuarioVal.toLowerCase().includes(texto.toLowerCase());
 
@@ -186,6 +214,9 @@ export default function Contraseñas() {
                     keyboardShouldPersistTaps="handled"
                     automaticallyAdjustKeyboardInsets={false}
                 >
+                    <View style={{ alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 8 }}>
+                        <ThemeToggle />
+                    </View>
                     <View style={{ padding: 20 }}>
                         <Text style={[styles.titulo, { color: colors.textPrimary }]}>
                             Contraseñas
@@ -200,8 +231,8 @@ export default function Contraseñas() {
                             Funcionalidades
                         </Text>
                         <Text style={[styles.textoNormal, { color: colors.textSecondary }]}>
-                            - Crear y gestionar contraseñas{"\n"}
-                            - Generar contraseñas seguras{"\n"}
+                            - Crear y gestionar contraseñas{'\n'}
+                            - Generar contraseñas seguras{'\n'}
                             - Buscar y filtrar contraseñas
                         </Text>
                     </View>
@@ -227,7 +258,8 @@ export default function Contraseñas() {
                         />
                     </View>
                     
-                    <MenuContraseñas 
+                    <MenuContraseñas
+                        isDarkMode={isDark}
                         textoBusqueda={texto} 
                         onSeleccionarCategoria={(cat) => setCategoriaSeleccionada(cat)}
                     />
@@ -256,18 +288,28 @@ export default function Contraseñas() {
                                 return (
                                     <View key={item.id} style={[styles.card, { backgroundColor: colors.cardBg }]}>
                                         <View style={styles.cardHeader}>
-                                            <View>
-                                                <Text style={[styles.nombreTexto, { color: colors.cardText }]}>
-                                                    {item.titulo}
+                                            <View style={{ flex: 1, marginRight: 8 }}>
+                                                <Text style={[styles.nombreTexto, { color: colors.claveText }]}>
+                                                    {item.nombre}
                                                 </Text>
                                                 <Text style={[styles.usuarioTexto, { color: colors.cardSubtext }]}>
-                                                    {item.nombre} - {item.usuarioCuenta}
+                                                    {item.usuarioCuenta}
                                                 </Text>
                                             </View>
-                                            <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
-                                                <Text style={[styles.badgeTexto, { color: colors.badgeText }]}>
-                                                    {item.categoria}
-                                                </Text>
+
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                <View style={[styles.badgeCategoria, { backgroundColor: colors.badgeBg }]}>
+                                                    <Text style={[styles.badgeTexto, { color: colors.badgeText }]}>
+                                                        {item.categoria}
+                                                    </Text>
+                                                </View>
+
+                                                <Pressable 
+                                                    onPress={() => eliminarContraseñaAPI(item.id)} 
+                                                    style={styles.deleteBtn}
+                                                >
+                                                    <Ionicons name="trash-outline" size={18.5} color="#ef4444" />
+                                                </Pressable>
                                             </View>
                                         </View>
 
@@ -275,13 +317,25 @@ export default function Contraseñas() {
                                             <Text style={[styles.claveTexto, { color: colors.claveText }]}>
                                                 {esVisible ? item.password : '••••••••••••'}
                                             </Text>
-                                            <Pressable onPress={() => toggleVisibilidad(item.id)} style={styles.ojoBtn}>
-                                                <Ionicons 
-                                                    name={esVisible ? "eye-off-outline" : "eye-outline"} 
-                                                    size={20} 
-                                                    color={isDark ? "#6b7280" : "#9ca3af"} 
-                                                />
-                                            </Pressable>
+
+                                            {/* ACCIONES: COPIAR CONTRASEÑA + VER/OCULTAR */}
+                                            <View style={styles.accionesClave}>
+                                                <Pressable onPress={() => copiarAlPortapapeles(item.password)} style={styles.accionBtn}>
+                                                    <Ionicons 
+                                                        name="copy-outline" 
+                                                        size={19} 
+                                                        color={isDark ? "#6b7280" : "#9ca3af"} 
+                                                    />
+                                                </Pressable>
+
+                                                <Pressable onPress={() => toggleVisibilidad(item.id)} style={styles.accionBtn}>
+                                                    <Ionicons 
+                                                        name={esVisible ? "eye-off-outline" : "eye-outline"} 
+                                                        size={20} 
+                                                        color={isDark ? "#6b7280" : "#9ca3af"} 
+                                                    />
+                                                </Pressable>
+                                            </View>
                                         </View>
                                     </View>
                                 );
@@ -290,102 +344,28 @@ export default function Contraseñas() {
                     </ImageBackground>
 
                     {/* Modal con Formulario */}
-                    <Modal
-                        animationType="slide"
-                        transparent={true}
+                    <PasswordFormModal
                         visible={modalVisible}
-                        onRequestClose={() => setModalVisible(false)}
-                    >
-                        <View style={styles.modalBg}>
-                            <View style={[styles.modalCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
-                                <Text style={[styles.modalTitulo, { color: isDark ? '#ffffff' : '#000000' }]}>
-                                    Nueva Contraseña
-                                </Text>
-
-                                <Text style={styles.label}>Título:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: Mi cuenta personal..."
-                                    placeholderTextColor="#888"
-                                    value={nuevoTitulo}
-                                    onChangeText={setNuevoTitulo}
-                                />
-
-                                <Text style={styles.label}>Aplicación / Servicio:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: Spotify, Facebook..."
-                                    placeholderTextColor="#888"
-                                    value={nuevoNombre}
-                                    onChangeText={setNuevoNombre}
-                                />
-
-                                <Text style={styles.label}>Email / Usuario:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="Ej: usuario@gmail.com"
-                                    placeholderTextColor="#888"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    value={nuevoUsuario}
-                                    onChangeText={setNuevoUsuario}
-                                />
-
-                                <Text style={styles.label}>Contraseña:</Text>
-                                <TextInput
-                                    style={[styles.modalInput, { color: isDark ? '#fff' : '#000', borderColor: colors.searchBorder }]}
-                                    placeholder="••••••••••••"
-                                    placeholderTextColor="#888"
-                                    secureTextEntry
-                                    value={nuevaClave}
-                                    onChangeText={setNuevaClave}
-                                />
-
-                                <Text style={styles.label}>Categoría:</Text>
-                                <View style={styles.opcionesCategorias}>
-                                    {['Contraseñas Personales', 'Trabajo y Servidores', 'Redes Sociales'].map((cat) => (
-                                        <Pressable
-                                            key={cat}
-                                            style={[
-                                                styles.chipCategoria,
-                                                nuevaCategoria === cat && styles.chipCategoriaActivo
-                                            ]}
-                                            onPress={() => setNuevaCategoria(cat)}
-                                        >
-                                            <Text style={[
-                                                styles.chipTexto,
-                                                nuevaCategoria === cat && styles.chipTextoActivo
-                                            ]}>
-                                                {cat}
-                                            </Text>
-                                        </Pressable>
-                                    ))}
-                                </View>
-
-                                <View style={styles.modalAcciones}>
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: '#e5e7eb' }]} 
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Text style={{ color: '#374151', fontWeight: '600' }}>Cancelar</Text>
-                                    </Pressable>
-
-                                    <Pressable 
-                                        style={[styles.btnModal, { backgroundColor: '#4f46e5' }]} 
-                                        onPress={guardarNuevaContraseña}
-                                    >
-                                        <Text style={{ color: '#ffffff', fontWeight: '600' }}>Guardar</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        </View>
-                    </Modal>
+                        isDarkMode={isDark}
+                        colors={colors}
+                        nombre={nuevoNombre}
+                        usuario={nuevoUsuario}
+                        password={nuevaClave}
+                        categoria={nuevaCategoria}
+                        onChangeNombre={setNuevoNombre}
+                        onChangeUsuario={setNuevoUsuario}
+                        onChangePassword={setNuevaClave}
+                        onChangeCategoria={setNuevaCategoria}
+                        onClose={() => setModalVisible(false)}
+                        onSave={guardarNuevaContraseña}
+                    />
 
                 </ScrollView>
             </ImageBackground>
+            <AppPopup popup={popup} onDismiss={dismissPopup} />
         </SafeAreaView>
     );
-}  
+}
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -484,6 +464,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+  deleteBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   claveContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,75 +481,14 @@ const styles = StyleSheet.create({
   claveTexto: {
     fontSize: 14,
     fontFamily: 'monospace',
-  },
-  ojoBtn: {
-    padding: 2,
-  },
-  modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
   },
-  modalCard: {
-    borderRadius: 12,
-    padding: 20,
-    elevation: 5,
-  },
-  modalTitulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 10,
-    marginBottom: 4,
-    color: '#6b7280',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 15,
-  },
-  opcionesCategorias: {
+  accionesClave: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-    marginBottom: 15,
+    alignItems: 'center',
+    gap: 12,
   },
-  chipCategoria: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#9ca3af',
-  },
-  chipCategoriaActivo: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
-  },
-  chipTexto: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  chipTextoActivo: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  modalAcciones: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 10,
-  },
-  btnModal: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  accionBtn: {
+    padding: 2,
   },
 });
